@@ -1,0 +1,27 @@
+import Navbar from "../components/NavBar";
+import Footer from "../components/Footer";
+import DateBar from "../components/DateBar";
+
+function MainLayout({ children }) {
+    return (
+        <div className="min-h-screen flex flex-col bg-gray-50">
+
+            {/* NAVBAR (fijo arriba) */}
+            <header className="shadow-md bg-white sticky top-0 z-50">
+                <Navbar />
+            </header>
+
+            <DateBar/>
+
+            {/* CONTENIDO PRINCIPAL */}
+            <main className="flex-grow max-w-7xl mx-auto px-4 py-10">
+                {children}
+            </main>
+
+            {/* FOOTER */}
+            <Footer />
+        </div>
+    );
+}
+
+export default MainLayout;
