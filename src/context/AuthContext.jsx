@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
     }, []);
 
     const isLoggedIn = currentUser !== null;
-    const isAdmin = currentUser?.email === "admin@admin.com"; // cambia tu email admin
+    const isAdmin = currentUser?.email === "reporterosenfm@admin.com"; 
 
     const logout = async () => {
         await supabase.auth.signOut();
