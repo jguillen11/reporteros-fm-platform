@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
 
-// Función para obtener y formatear la fecha
 const getCurrentDate = () => {
-    // Configuración para mostrar día, fecha y hora en español
     const options = {
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric', 
     };
-    // Reemplaza "es-MX" por "es-ES" u otro si lo necesitas
     return new Date().toLocaleDateString('es-MX', options);
 };
 
@@ -17,16 +14,14 @@ function DateBar() {
     const [currentDate, setCurrentDate] = useState(getCurrentDate());
 
     useEffect(() => {
-        // Establecer un intervalo para actualizar la fecha cada 60 segundos (1 minuto)
         const timerId = setInterval(() => {
             setCurrentDate(getCurrentDate());
-        }, 60000); // 60000 milisegundos = 1 minuto
+        }, 60000); 
 
-        // Limpieza: importante para detener el intervalo cuando el componente se desmonte
         return () => {
             clearInterval(timerId);
         };
-    }, []); // El array vacío asegura que el efecto solo se ejecute al montar y desmontar
+    }, []); 
 
     return (
         // Barra de fecha con estilos sobrios y responsivos

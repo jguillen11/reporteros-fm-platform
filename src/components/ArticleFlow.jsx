@@ -23,7 +23,7 @@ export default function ArticleFlow({ noticia }) {
 
     return (
         // 🟢 CLASE AÑADIDA: w-full para asegurar que el artículo ocupe todo el ancho disponible.
-        <article className="border-b border-gray-300 pb-2 pt-6 mb-2 bg-white last:border-b-0 w-full"> 
+        <article className="border-b border-gray-300 pb-2 pt-6 mb-2 max-w-200 bg-white last:border-b-0 w-full"> 
             
             {/* 1. Metadatos (Solo Fecha) */}
             <div className="text-sm mb-3 text-gray-500">
@@ -37,7 +37,7 @@ export default function ArticleFlow({ noticia }) {
 
             {/* 3. Cuerpo del Artículo COMPLETO */}
             <div 
-                className="text-lg text-gray-800 leading-relaxed font-serif mb-6"
+                className="text-lg text-justify text-gray-800 leading-relaxed font-serif mb-6"
                 dangerouslySetInnerHTML={renderContent()} 
             />
 
