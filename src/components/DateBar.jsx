@@ -7,7 +7,17 @@ const getCurrentDate = () => {
         month: 'long',
         day: 'numeric',
     };
-    return new Date().toLocaleDateString('es-MX', options);
+    let dateString = new Date().toLocaleDateString('es-MX', options);
+
+    // Capitalizar la primera letra
+    // 1. Obtener la primera letra.
+    // 2. Convertirla a mayúscula.
+    // 3. Concatenarla con el resto del string (desde el segundo carácter).
+    if (dateString.length > 0) {
+        dateString = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+    }
+
+    return dateString;
 };
 
 function DateBar() {
