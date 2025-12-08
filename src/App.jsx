@@ -1,9 +1,16 @@
 import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
+import InfoPage from "./pages/InfoPage";
+import MunicipiosPage from "./pages/MunicipiosPage";
+import EstadosPage from "./pages/EstadosPage";
 import PoliciacasPage from "./pages/PoliciacasPage";
+import EspectaculosPage from "./pages/EspectaculosPage";
 import NoticiasDeportes from "./pages/DeportesPage";
+import FinanzasPage from "./pages/FinanzasPage";
 import SurSurestePage from "./pages/SurSurestePage";
+import NacionalesPage from "./pages/NacionalesPage";
+import CulturaPage from "./pages/CulturaPage";
 
 // Rutas de Administración
 import LoginPage from "./pages/admin/LoginPage";
@@ -20,9 +27,16 @@ function App() {
             {/* PÚBLICAS */}
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/info" element={<InfoPage />} />
+            <Route path="/municipios" element={<MunicipiosPage />} />
+            <Route path="/estados" element={<EstadosPage />} />
             <Route path="/policiacas" element={<PoliciacasPage />} />
+            <Route path="/espectaculos" element={<EspectaculosPage />} />
             <Route path="/deportes" element={<NoticiasDeportes />} />
+            <Route path="/finanzas" element={<FinanzasPage />} />
             <Route path="/sur-sureste" element={<SurSurestePage />} />
+            <Route path="/nacionales" element={<NacionalesPage />} />
+            <Route path="/cultura" element={<CulturaPage />} />
 
             {/* LOGIN */}
             <Route path="/admin/login" element={<LoginPage />} />

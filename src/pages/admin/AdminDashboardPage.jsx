@@ -19,14 +19,14 @@ function AdminDashboardPage() {
     const [newsList, setNewsList] = useState([]);
     const [message, setMessage] = useState("");
     const [isLoadingData, setIsLoadingData] = useState(false);
-    const [deleteError, setDeleteError] = useState(""); 
+    const [deleteError, setDeleteError] = useState("");
 
     // Hook para manejar mensajes de navegación (por ejemplo, después de crear/editar)
     useEffect(() => {
         if (window.history.state && window.history.state.usr && window.history.state.usr.message) {
             setMessage(window.history.state.usr.message);
             setDeleteError(""); // Limpiar errores previos si hay un mensaje de éxito
-            
+
             // Limpiar el mensaje después de unos segundos
             const timer = setTimeout(() => setMessage(""), 5000);
             return () => clearTimeout(timer);
@@ -47,8 +47,8 @@ function AdminDashboardPage() {
             let { data, error } = await supabase
                 .from("noticias")
                 // Asegúrate de seleccionar el image_path para la eliminación en Storage
-                .select("id, title, category, created_at, image_path") 
-                .order("created_at", { ascending: false }); 
+                .select("id, title, category, created_at, image_path")
+                .order("created_at", { ascending: false });
 
             if (error) {
                 console.error("Error al cargar noticias:", error);
@@ -77,7 +77,7 @@ function AdminDashboardPage() {
             // 1. Intentar borrar la imagen asociada en Storage (si existe)
             if (image_path) {
                 const { error: storageError } = await supabase.storage
-                    .from(BUCKET_NAME) 
+                    .from(BUCKET_NAME)
                     .remove([image_path]);
 
                 if (storageError) {
@@ -96,7 +96,7 @@ function AdminDashboardPage() {
             // Éxito: actualizar la lista en el estado
             setNewsList(newsList.filter(n => n.id !== id));
             setMessage(`Noticia "${title}" eliminada correctamente.`);
-            
+
         } catch (err) {
             console.error("Error en la eliminación:", err);
             setDeleteError(`❌ Error al eliminar la noticia: ${err.message || "Error desconocido"}`);
@@ -120,21 +120,21 @@ function AdminDashboardPage() {
                     </h1>
 
                     <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0 w-full sm:w-auto">
-                        
+
                         <Link
                             to="/admin/create"
                             className="w-full sm:w-auto bg-sky-700 text-white px-5 py-2 rounded-lg font-medium shadow-md hover:bg-sky-800 transition duration-150 text-center"
                         >
                             + Nueva Noticia
                         </Link>
-                        
+
                         <Link
                             to="/"
                             className="w-full sm:w-auto bg-slate-500 text-white px-5 py-2 rounded-lg font-medium shadow-md hover:bg-slate-600 transition duration-150 text-center"
                         >
                             Ver Sitio Web
                         </Link>
-                        
+
                         {logout && (
                             <button
                                 onClick={handleLogout}
@@ -152,7 +152,7 @@ function AdminDashboardPage() {
                         {message}
                     </div>
                 )}
-                 {deleteError && (
+                {deleteError && (
                     <div className="p-4 mb-6 rounded-md shadow-lg bg-red-50 border border-red-300 text-red-800 font-medium">
                         {deleteError}
                     </div>
@@ -171,7 +171,7 @@ function AdminDashboardPage() {
                             Cargando datos...
                         </div>
                     )}
-                    
+
                     {/* Sin Noticias */}
                     {!isLoadingData && newsList.length === 0 ? (
                         <div className="p-10 text-center text-gray-500">
@@ -182,7 +182,7 @@ function AdminDashboardPage() {
                     ) : (
                         <>
                             {/* TABLA (Desktop & Tablet: >= md) */}
-                            <div className="overflow-x-auto hidden md:block"> 
+                            <div className="overflow-x-auto hidden md:block">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
@@ -204,7 +204,7 @@ function AdminDashboardPage() {
                                                         {news.category}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500 w-[15%]">{formatDate(news.created_at)}</td> 
+                                                <td className="px-6 py-4 text-sm text-gray-500 w-[15%]">{formatDate(news.created_at)}</td>
 
                                                 <td className="px-6 py-4 text-center w-[15%]">
                                                     <div className="flex justify-center gap-3">
@@ -213,7 +213,7 @@ function AdminDashboardPage() {
                                                             className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition duration-150 text-lg"
                                                             title="Editar"
                                                         >
-                                                            &#9999; 
+                                                            &#9999;
                                                         </Link>
 
                                                         <button
@@ -221,7 +221,7 @@ function AdminDashboardPage() {
                                                             className="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition duration-150 text-lg"
                                                             title="Eliminar"
                                                         >
-                                                            &#128465; 
+                                                            &#128465;
                                                         </button>
                                                     </div>
                                                 </td>
@@ -230,7 +230,7 @@ function AdminDashboardPage() {
                                     </tbody>
                                 </table>
                             </div>
-                        
+
                             {/* LISTA DE TARJETAS (Mobile: < md) */}
                             <div className="p-4 space-y-4 md:hidden">
                                 {newsList.map(news => (
@@ -238,20 +238,20 @@ function AdminDashboardPage() {
                                         <div className="flex justify-between items-start">
                                             {/* Título */}
                                             <h3 className="text-base font-bold text-gray-900 pr-4">{news.title}</h3>
-                                            
+
                                             {/* Categoría */}
                                             <span className="flex-shrink-0 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                                                 {news.category}
                                             </span>
                                         </div>
-                                        
+
                                         <p className="text-xs text-gray-500 border-t pt-2">
                                             **Publicación:** {formatDate(news.created_at)}
                                         </p>
                                         <p className="text-xs text-gray-400">
                                             **Ref. ID:** {news.id.substring(0, 8)}...
                                         </p>
-                                        
+
                                         {/* Acciones */}
                                         <div className="flex justify-end gap-3 border-t pt-3 mt-3">
                                             <Link

@@ -7,10 +7,16 @@ export default function NewsCard({ noticia }) {
         if (!noticia.category) return;
 
         const categoryRoute = {
+            Informacion: "/info",
+            Municipios: "/municipios",
+            Estados: "/estados",
             Policiacas: "/policiacas",
+            Espectaculos: "/espectaculos",
             Deportes: "/deportes",
+            Finanzas: "/finanzas",
             SurSureste: "/sur-sureste",
             Nacionales: "/nacionales",
+            Cultura: "/cultura",
         }[noticia.category] || "/";
 
         navigate(categoryRoute, { state: { noticiaId: noticia.id } });

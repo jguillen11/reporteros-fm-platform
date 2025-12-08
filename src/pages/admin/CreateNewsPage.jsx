@@ -3,9 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../../DB/supabaseClient";
 import imageCompression from "browser-image-compression";
 
-const CATEGORIES = ["Policiacas", "Deportes", "SurSureste"];
+const CATEGORIES = ["Informacion", "Municipios", "Estados", "Policiacas", "Espectaculos", "Deportes", "Finanzas", "SurSureste", "Nacionales", "Cultura"];
 // 💡 Nombre del bucket que definiste anteriormente
-const BUCKET_NAME = "noticias"; 
+const BUCKET_NAME = "noticias";
 
 export default function CreateNewsPage() {
     const navigate = useNavigate();
@@ -36,11 +36,11 @@ export default function CreateNewsPage() {
 
         // Validar tamaño inicial (opcional)
         if (file.size > 5 * 1024 * 1024) {
-             setMessage("El archivo es demasiado grande (máx 5MB recomendado). Se intentará comprimir.");
-             setMessageType("error");
+            setMessage("El archivo es demasiado grande (máx 5MB recomendado). Se intentará comprimir.");
+            setMessageType("error");
         } else {
-             setMessage("Imagen lista para ser publicada. Se optimizará al guardar.");
-             setMessageType("success");
+            setMessage("Imagen lista para ser publicada. Se optimizará al guardar.");
+            setMessageType("success");
         }
 
         setFormData({ ...formData, imageFile: file });
@@ -81,13 +81,20 @@ export default function CreateNewsPage() {
                         useWebWorker: true,
                     });
                 }
-                
-                const fileName = `${Date.now()}_${finalFile.name.replace(/\s/g, "_")}`;
-                const filePath = `noticias/${fileName}`; 
+
+                const cleanName = finalFile.name
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "") 
+                    .replace(/[^a-zA-Z0-9._-]/g, "_") 
+                    .replace(/\s+/g, "_");            
+
+                const fileName = `${Date.now()}_${cleanName}`;
+
+                const filePath = `noticias/${fileName}`;
 
                 // Subir a Supabase Storage
                 const { error: uploadError } = await supabase.storage
-                    .from(BUCKET_NAME) 
+                    .from(BUCKET_NAME)
                     .upload(filePath, finalFile, {
                         cacheControl: "3600",
                         upsert: false,
@@ -95,12 +102,12 @@ export default function CreateNewsPage() {
 
                 if (uploadError) {
                     console.error(uploadError);
-                    throw new Error("Error subiendo la imagen. Revisa la RLS en Supabase Storage."); 
+                    throw new Error("Error subiendo la imagen. Revisa la RLS en Supabase Storage.");
                 }
 
                 // Obtener URL pública
                 const { data: publicURL } = supabase.storage
-                    .from(BUCKET_NAME) 
+                    .from(BUCKET_NAME)
                     .getPublicUrl(filePath);
 
                 image_url = publicURL.publicUrl;
@@ -120,7 +127,7 @@ export default function CreateNewsPage() {
                         image_path,
                     }
                 ])
-                .select('id'); 
+                .select('id');
 
             if (insertError) throw insertError;
 
@@ -138,20 +145,17 @@ export default function CreateNewsPage() {
         setLoading(false);
     };
 
-    // ---------------------------------------
-    // 🖼️ Renderizado
-    // ---------------------------------------
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-10">
             <div className="max-w-5xl mx-auto bg-white p-6 sm:p-10 rounded-xl shadow-2xl">
-                
+
                 {/* Encabezado */}
                 <div className="mb-8 border-b pb-4 flex justify-between items-center">
                     <h1 className="text-4xl font-extrabold text-gray-900">
                         Publicar Nuevo Artículo
                     </h1>
-                    <Link 
-                        to="/admin/dashboard" 
+                    <Link
+                        to="/admin/dashboard"
                         className="text-sm font-medium text-gray-600 hover:text-blue-600 transition"
                     >
                         ← Volver al Panel
@@ -160,9 +164,8 @@ export default function CreateNewsPage() {
 
                 {/* Mensajes de Alerta */}
                 {message && (
-                    <div className={`p-4 rounded-lg mb-6 text-sm font-medium ${
-                        messageType === "error" ? "bg-red-100 text-red-700 border border-red-200" : "bg-green-100 text-green-700 border border-green-200"
-                    }`}>
+                    <div className={`p-4 rounded-lg mb-6 text-sm font-medium ${messageType === "error" ? "bg-red-100 text-red-700 border border-red-200" : "bg-green-100 text-green-700 border border-green-200"
+                        }`}>
                         {message}
                     </div>
                 )}
@@ -172,7 +175,7 @@ export default function CreateNewsPage() {
 
                     {/* COLUMNA PRINCIPAL (CAMPOS) */}
                     <div className="lg:col-span-2 space-y-6">
-                        
+
                         {/* Título */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Título</label>
@@ -199,7 +202,7 @@ export default function CreateNewsPage() {
                                 {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                             </select>
                         </div>
-                        
+
                         {/* Contenido */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Contenido</label>
@@ -218,18 +221,18 @@ export default function CreateNewsPage() {
 
                     {/* COLUMNA LATERAL (IMAGEN Y ACCIÓN) */}
                     <div className="lg:col-span-1 space-y-6">
-                        
+
                         {/* IMAGEN DESTACADA */}
                         <div className="p-5 border border-gray-200 rounded-lg bg-white shadow-md">
                             <h3 className="text-md font-bold text-gray-800 mb-3 border-b pb-2">Imagen Destacada</h3>
-                            
+
                             <label className="block text-sm font-medium text-gray-600 mb-2">
                                 Archivo:
                             </label>
-                            <input 
-                                type="file" 
-                                accept="image/*" 
-                                onChange={handleFileChange} 
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
                                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             />
 
@@ -252,8 +255,8 @@ export default function CreateNewsPage() {
                             type="submit"
                             disabled={loading}
                             className={`w-full py-4 text-lg font-extrabold rounded-lg shadow-xl transition duration-300 transform 
-                                ${loading 
-                                    ? "bg-gray-400 text-gray-700 cursor-not-allowed" 
+                                ${loading
+                                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                                     : "bg-sky-700 text-white hover:bg-sky-800 hover:scale-[1.01] active:scale-100"
                                 }
                             `}

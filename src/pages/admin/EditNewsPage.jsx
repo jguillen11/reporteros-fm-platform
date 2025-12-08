@@ -5,7 +5,7 @@ import imageCompression from "browser-image-compression";
 
 //  Define el nombre del bucket para consistencia
 const BUCKET_NAME = "noticias";
-const CATEGORIES = ["Policiacas", "Deportes", "SurSureste"];
+const CATEGORIES = ["Informacion", "Municipios", "Estados", "Policiacas", "Espectaculos", "Deportes", "Finanzas", "SurSureste", "Nacionales", "Cultura"];
 
 function EditNewsPage() {
     const { id } = useParams();
@@ -122,7 +122,14 @@ function EditNewsPage() {
                     });
                 }
 
-                const fileName = `${Date.now()}_${finalFile.name.replace(/\s/g, "_")}`;
+                const cleanName = finalFile.name
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "") // remover acentos
+                    .replace(/[^a-zA-Z0-9._-]/g, "_") // remover todo lo raro
+                    .replace(/\s+/g, "_");            // espacios por guiones bajos
+
+                const fileName = `${Date.now()}_${cleanName}`;
+
                 const filePath = `noticias/${fileName}`;
 
                 const { error: uploadError } = await supabase.storage
