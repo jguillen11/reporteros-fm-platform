@@ -17,16 +17,15 @@ export default function ArticleFlow({ noticia }) {
 
     const [expanded, setExpanded] = useState(false);
 
-    const renderContent = () => {
-        return { __html: content };
-    };
-
     return (
         <article className="border-b border-gray-300 pb-2 pt-6 mb-2 max-w-200 bg-white last:border-b-0 w-full">
 
             {/* FECHA */}
             <div className="text-sm mb-3 text-gray-500">
-                <p>Publicado el: <span className="font-medium text-gray-600">{formattedDate}</span></p>
+                <p>
+                    Publicado el:{" "}
+                    <span className="font-medium text-gray-600">{formattedDate}</span>
+                </p>
             </div>
 
             {/* TÍTULO */}
@@ -34,24 +33,24 @@ export default function ArticleFlow({ noticia }) {
                 {title}
             </h2>
 
-            {/* TEXTO DEL ARTÍCULO */}
+            {/* CONTENIDO (COLAPSABLE EN TODAS LAS VISTAS) */}
             <div
                 className={`
-                    text-lg text-justify text-gray-800 leading-relaxed font-serif mb-4
-                    ${expanded ? "" : "line-clamp-5 md:line-clamp-none"}
+                    text-lg text-justify text-gray-800 leading-relaxed font-serif mb-4 transition-all duration-500
+                    overflow-hidden
+                    ${expanded ? "max-h-none" : "max-h-48"}
                 `}
-                dangerouslySetInnerHTML={renderContent()}
-            />
-
-            {/* BOTÓN LEER MÁS / MENOS (solo en móvil) */}
-            <div className="md:hidden">
-                <button
-                    className="text-red-600 font-semibold underline mt-2"
-                    onClick={() => setExpanded(!expanded)}
-                >
-                    {expanded ? "Leer menos ▲" : "Leer más ▼"}
-                </button>
+            >
+                <div dangerouslySetInnerHTML={{ __html: content }} />
             </div>
+
+            {/* BOTÓN — AHORA VISIBLE EN TODAS LAS VISTAS */}
+            <button
+                className="text-red-600 font-semibold underline mt-2 cursor-pointer"
+                onClick={() => setExpanded(!expanded)}
+            >
+                {expanded ? "Leer menos ▲" : "Leer más ▼"}
+            </button>
 
             {/* IMAGEN */}
             {image_url && (

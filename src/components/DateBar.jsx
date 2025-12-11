@@ -46,7 +46,7 @@ function DateBar() {
                 {/* Lado Derecho: Publicidad (Responsivo) */}
                 <div className="px-3 py-1 cursor-pointer flex justify-center md:justify-end w-full md:w-auto">
                     <img
-                        src="https://0201.nccdn.net/4_2/000/000/01e/20c/1bannerfgecoli21-11-2025.jpg"
+                        src="/public/fiscaliaBan.jpg"
                         alt="publicidad"
                         className="h-14 sm:h-16 md:h-20 w-auto object-contain"
                     />
