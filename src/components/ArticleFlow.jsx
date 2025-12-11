@@ -9,7 +9,6 @@ export default function ArticleFlow({ noticia }) {
         created_at 
     } = noticia;
 
-    // Formateo de fecha en español
     const formattedDate = new Date(created_at).toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',
@@ -19,100 +18,122 @@ export default function ArticleFlow({ noticia }) {
     const [expanded, setExpanded] = useState(false);
 
     return (
-        // CONTENEDOR PRINCIPAL: Estilo de flujo minimalista (separador inferior)
-        <article className="
-            flex flex-col 
-            bg-white 
-            py-8 
-            mb-4 
-            border-b 
-            border-gray-200 
-            last:border-b-0 
-            w-full 
-            max-w-4xl 
-            mx-auto
-        ">
+        <article
+            className="
+                flex flex-col 
+                bg-white 
+                py-6 
+                mb-4 
+                border-b 
+                border-gray-200 
+                last:border-b-0 
+                w-full 
+                max-w-5xl 
+                mx-auto
+                px-2
+                sm:px-4
+                lg:px-0
+            "
+        >
 
-            {/* METADATOS (Fecha - Arriba, discreta) */}
-            <div className="text-sm font-light text-gray-500 mb-3 tracking-wide">
-                <span className="uppercase mr-2">Publicado el:</span>
+            {/* FECHA */}
+            <div className="text-[0.65rem] sm:text-xs font-light text-gray-500 mb-2 tracking-wide">
+                <span className="uppercase mr-1">Publicado el:</span>
                 <span className="font-medium text-gray-600">{formattedDate}</span>
             </div>
 
-            {/* TÍTULO (Grande y destacado) */}
-            <h2 className="
-                text-4xl 
-                md:text-5xl 
-                font-serif 
-                font-black 
-                text-gray-900 
-                leading-tight 
-                mb-6 
-                tracking-tighter
-            ">
+            {/* TÍTULO */}
+            <h2
+                className="
+                    font-serif 
+                    font-black 
+                    text-gray-900 
+                    leading-tight
+                    text-justify 
+                    mb-4 
+                    tracking-tight
+                    text-[clamp(1.2rem,4vw,3rem)]
+                "
+            >
                 {title}
             </h2>
 
-            {/* *** CONTENEDOR DE CONTENIDO RELATIVO PARA EL DEGRADADO *** */}
-            <div className="relative"> 
-                {/* CONTENIDO (COLAPSABLE - Cuerpo de texto principal) */}
+            {/* CONTENIDO */}
+            <div className="relative">
                 <div
                     className={`
-                        text-xl 
+                        text-[clamp(0.85rem,2vw,1.2rem)]
                         text-gray-800 
                         leading-relaxed 
                         font-serif 
                         transition-all 
                         duration-700 
+                        text-justify
                         overflow-hidden 
-                        mb-4
-                        ${expanded ? "max-h-none" : "max-h-40"}
+                        mb-3
+                        ${
+                            expanded
+                                ? "max-h-none"
+                                : "max-h-[28vh] sm:max-h-[35vh]"
+                        }
                     `}
                 >
-                    {/* Renderiza el contenido HTML */}
                     <div dangerouslySetInnerHTML={{ __html: content }} />
                 </div>
 
-                {/* *** DEGRADADO (OVERLAY) QUE SIMULA LOS PUNTOS SUSPENSIVOS *** */}
                 {!expanded && (
-                    <div className="
-                        absolute 
-                        bottom-4 
-                        left-0 
-                        right-0 
-                        h-12 
-                        bg-gradient-to-t 
-                        from-white 
-                        to-transparent
-                        pointer-events-none
-                    "></div>
+                    <div
+                        className="
+                            absolute 
+                            bottom-2 
+                            left-0 
+                            right-0 
+                            h-16 
+                            bg-gradient-to-t 
+                            from-white 
+                            to-transparent
+                            pointer-events-none
+                        "
+                    ></div>
                 )}
             </div>
 
-            {/* BOTÓN DE EXPANSIÓN (Color discreto) */}
+            {/* BOTÓN */}
             <button
                 className="
                     text-gray-700 
                     font-medium 
-                    hover:text-black 
+                    hover:text-black
+                    cursor-pointer 
                     transition-colors 
                     duration-200 
-                    text-lg 
-                    mt-2
+                    text-[clamp(0.8rem,2vw,1.1rem)]
+                    mt-1
+                    underline
                 "
                 onClick={() => setExpanded(!expanded)}
             >
                 {expanded ? "Ocultar contenido ▲" : "Continuar leyendo ▼"}
             </button>
-            
-            {/* IMAGEN DE BANNER (Después del texto y botón) */}
+
+            {/* IMAGEN */}
             {image_url && (
-                <figure className="w-full my-8 pt-4">
+                <figure className="w-full my-6 pt-3 flex justify-center">
                     <img
                         src={image_url}
                         alt={`Imagen destacada: ${title}`}
-                        className="w-full max-h-[500px] object-cover mx-auto shadow-md"
-                        onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+                        className="
+                            w-full 
+                            max-w-[900px]
+                            max-h-[380px] 
+                            object-cover 
+                            shadow-md
+                            rounded-md
+                        "
+                        onError={(e) => { 
+                            e.target.onerror = null; 
+                            e.target.style.display = 'none'; 
+                        }}
                     />
                 </figure>
             )}
