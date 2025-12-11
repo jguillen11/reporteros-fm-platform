@@ -19,7 +19,8 @@ export default function NewsCard({ noticia }) {
             Cultura: "/cultura",
         }[noticia.category] || "/";
 
-        navigate(categoryRoute, { state: { noticiaId: noticia.id } });
+        // 👉 Mandamos el ID de la noticia seleccionada
+        navigate(categoryRoute + `?id=${noticia.id}`);
     };
 
     return (
@@ -27,7 +28,6 @@ export default function NewsCard({ noticia }) {
             onClick={goToCategoryPage}
             className="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-4 border border-gray-200"
         >
-            {/* Imagen */}
             <div className="h-40 w-full overflow-hidden rounded-lg mb-3">
                 <img
                     src={noticia.imageUrl || noticia.imageURL}
@@ -36,17 +36,14 @@ export default function NewsCard({ noticia }) {
                 />
             </div>
 
-            {/* Categoría */}
             <span className="text-xs font-bold uppercase text-sky-600">
                 {noticia.category}
             </span>
 
-            {/* Título */}
             <h3 className="text-lg font-bold text-gray-900 mt-2 line-clamp-2">
                 {noticia.title}
             </h3>
 
-            {/* Resumen */}
             <p className="text-sm text-gray-700 mt-1 line-clamp-3">
                 {noticia.content}
             </p>
