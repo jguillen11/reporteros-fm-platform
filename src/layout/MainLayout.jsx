@@ -1,6 +1,7 @@
 import Navbar from "../components/Navbar"
-import Footer from "../components/Footer";
 import DateBar from "../components/DateBar";
+import AdBanner from "../components/AdBanner"
+import Footer from "../components/Footer";
 
 function MainLayout({ children }) {
     return (
@@ -11,7 +12,18 @@ function MainLayout({ children }) {
                 <Navbar />
             </header>
 
-            <DateBar/>
+            <DateBar />
+
+            <AdBanner
+                images={[
+                    "/media/reporterosNavidad.jpg",
+                    "/media/reporNavidad.jpg",
+                    "/media/carnesNavidad.jpg",
+                    "/media/tallerNavidad.jpg",
+                    "/media/ayuntamientoNavidad.jpg",
+                ]}
+            />
+
 
             {/* CONTENIDO PRINCIPAL */}
             <main className="flex-grow max-w-7xl mx-auto px-4 py-10">
