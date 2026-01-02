@@ -2,12 +2,12 @@ import React, { useEffect, useRef } from "react";
 
 export default function AdBanner({ images = [], interval = 3500 }) {
 
-    const banners = images.slice(0, 5);
+    const banners = images; // ya no limitamos a 5
     const containerRef = useRef(null);
 
     useEffect(() => {
         const container = containerRef.current;
-        if (!container) return;
+        if (!container || banners.length === 0) return;
 
         let index = 0;
 
@@ -30,12 +30,13 @@ export default function AdBanner({ images = [], interval = 3500 }) {
         <section className="w-full bg-gray-100 border-y border-gray-300">
             <div className="max-w-7xl mx-auto px-4 py-3">
 
-                {/* MÓVIL: carrusel | DESKTOP: grid */}
+                {/* MÓVIL: carrusel | DESKTOP: grid dinámico */}
                 <div
                     ref={containerRef}
                     className="
                         flex md:grid
-                        md:grid-cols-5
+                        md:grid-flow-col
+                        md:auto-cols-fr
                         gap-4
                         overflow-x-auto md:overflow-visible
                         snap-x snap-mandatory
@@ -48,7 +49,7 @@ export default function AdBanner({ images = [], interval = 3500 }) {
                             className="
                                 flex-shrink-0 md:flex-shrink
                                 w-full md:w-auto
-                                h-[120px]
+                                h-[180px]
                                 flex items-center justify-center
                                 px-2
                                 snap-center

@@ -44,7 +44,7 @@ function DateBar() {
                 </p>
 
                 {/* Lado Derecho: Publicidad (Responsivo) */}
-                <div className="px-3 py-1 cursor-pointer flex justify-center md:justify-end w-full md:w-auto">
+                <div className="px-3 py-1 flex justify-center md:justify-end w-full md:w-auto">
                     <img
                         src="/fiscaliaBan.jpg"
                         alt="publicidad"

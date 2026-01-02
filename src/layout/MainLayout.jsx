@@ -16,11 +16,9 @@ function MainLayout({ children }) {
 
             <AdBanner
                 images={[
-                    "/media/reporterosNavidad.jpg",
-                    "/media/reporNavidad.jpg",
-                    "/media/carnesNavidad.jpg",
-                    "/media/tallerNavidad.jpg",
-                    "/media/ayuntamientoNavidad.jpg",
+                    "/media/añonuevo.jpg",
+                    "/media/sismo.jpg"
+
                 ]}
             />
 
