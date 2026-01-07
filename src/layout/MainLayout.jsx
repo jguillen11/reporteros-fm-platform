@@ -17,7 +17,7 @@ function MainLayout({ children }) {
             <AdBanner
                 images={[
                     "/media/añonuevo.jpg",
-                    "/media/sismo.jpg"
+                    "/media/predial.jpg"
 
                 ]}
             />
