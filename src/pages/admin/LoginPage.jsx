@@ -23,7 +23,9 @@ function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await api("/api/admin/login", {
+            // 1. IMPORTANTE: La ruta debe empezar con /api/ para que Vercel la reconozca
+            // 2. No usamos res.ok ni res.json() aquí, porque tu servicio 'api' ya lo hace.
+            const data = await api("/api/admin/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -34,22 +36,23 @@ function LoginPage() {
                 }),
             });
 
-            if (!res.ok) {
-                throw new Error("Credenciales incorrectas");
+            // Si el backend responde con éxito (data ya es el JSON procesado)
+            if (data.success) {
+                // Guardar sesión - Usamos el ID del admin que devuelve tu login.js
+                localStorage.setItem("admin_token", data.admin?.id || "logged_in");
+                navigate("/admin/dashboard");
+            } else {
+                // Si el servidor responde pero con un error de negocio
+                setError(data.message || "Credenciales incorrectas");
             }
 
-            const data = await res.json();
-
-            // Guardar sesión
-            localStorage.setItem("admin_token", data.token);
-
-            navigate("/admin/dashboard");
         } catch (err) {
-            console.error(err);
+            // Si el fetch falla o res.ok es false, 'api.js' lanza un error que cae aquí
+            console.error("Error capturado:", err.message);
             setError("Correo o contraseña incorrectos.");
+        } finally {
+            setLoading(false);
         }
-
-        setLoading(false);
     };
 
     // ---------------------------------------
