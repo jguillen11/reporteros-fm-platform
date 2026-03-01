@@ -1,43 +1,51 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "../DB/supabaseClient";
+import { createContext, useContext, useState } from "react";
+import { api } from "../services/api";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-    const [currentUser, setCurrentUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        const session = supabase.auth.getSession().then(({ data }) => {
-            setCurrentUser(data.session?.user || null);
-            setLoading(false);
+    const login = async (email, password) => {
+        const res = await api("/api/admin/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
         });
 
-        const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-            setCurrentUser(session?.user || null);
-        });
+        if (!res.ok) {
+            throw new Error("Credenciales inválidas");
+        }
 
-        return () => {
-            listener.subscription.unsubscribe();
-        };
-    }, []);
+        const data = await res.json();
 
-    const isLoggedIn = currentUser !== null;
-    const isAdmin = currentUser?.email === "reporterosenfm@admin.com"; 
+        setUser(data.admin);
 
-    const logout = async () => {
-        await supabase.auth.signOut();
-        setCurrentUser(null);
+        // Persistencia simple
+        localStorage.setItem("admin", JSON.stringify(data.admin));
+    };
+
+    const logout = () => {
+        setUser(null);
+        localStorage.removeItem("admin");
     };
 
     return (
-        <AuthContext.Provider value={{ currentUser, isLoggedIn, isAdmin, logout }}>
-            {!loading && children}
+        <AuthContext.Provider
+            value={{
+                user,
+                isLoggedIn: !!user,
+                isAdmin: user?.role === "admin",
+                login,
+                logout,
+                loading,
+            }}
+        >
+            {children}
         </AuthContext.Provider>
     );
-}
+};
 
-export function useAuth() {
-    return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

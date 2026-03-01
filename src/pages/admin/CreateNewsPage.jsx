@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "../../DB/supabaseClient";
 import imageCompression from "browser-image-compression";
+import { api } from "../../services/api";
 
-const CATEGORIES = ["Informacion", "Municipios", "Estados", "Policiacas", "Espectaculos", "Deportes", "Finanzas", "SurSureste", "Nacionales", "Cultura"];
-// 💡 Nombre del bucket que definiste anteriormente
-const BUCKET_NAME = "noticias";
+const CATEGORIES = [
+    "Informacion",
+    "Municipios",
+    "Estados",
+    "Policiacas",
+    "Espectaculos",
+    "Deportes",
+    "Finanzas",
+    "SurSureste",
+    "Nacionales",
+    "Cultura",
+];
 
 export default function CreateNewsPage() {
     const navigate = useNavigate();
@@ -17,38 +26,45 @@ export default function CreateNewsPage() {
         title: "",
         category: CATEGORIES[0],
         content: "",
-        imageFile: null
+        imageFile: null,
     });
 
     const [imagePreview, setImagePreview] = useState(null);
     const [loading, setLoading] = useState(false);
 
     // ---------------------------------------
-    // ⚙️ Manejadores de Estado
+    // ⚙️ Manejadores
     // ---------------------------------------
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Validar tamaño inicial (opcional)
-        if (file.size > 5 * 1024 * 1024) {
-            setMessage("El archivo es demasiado grande (máx 5MB recomendado). Se intentará comprimir.");
-            setMessageType("error");
-        } else {
-            setMessage("Imagen lista para ser publicada. Se optimizará al guardar.");
+        setMessage("");
+        setMessageType("");
+
+        let finalFile = file;
+
+        if (file.size > 1024 * 1024) {
+            setMessage("La imagen se optimizará antes de subirse.");
             setMessageType("success");
+
+            finalFile = await imageCompression(file, {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1600,
+                useWebWorker: true,
+            });
         }
 
-        setFormData({ ...formData, imageFile: file });
-        setImagePreview(URL.createObjectURL(file));
+        setFormData({ ...formData, imageFile: finalFile });
+        setImagePreview(URL.createObjectURL(finalFile));
     };
 
     // ---------------------------------------
-    // 💾 Lógica de Subida y Publicación
+    // 💾 Guardar Noticia (NEON)
     // ---------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -64,85 +80,36 @@ export default function CreateNewsPage() {
         setMessageType("");
 
         try {
-            let image_url = null;
-            let image_path = null;
+            const body = new FormData();
+            body.append("title", formData.title);
+            body.append("category", formData.category);
+            body.append("content", formData.content);
 
-            // 1. Lógica de Subida de Imagen
             if (formData.imageFile) {
-                let finalFile = formData.imageFile;
-                setMessage("Comprimiendo y subiendo imagen...");
-                setMessageType("success");
-
-                // Comprimir la imagen antes de subirla
-                if (formData.imageFile.size > 1024 * 1024) {
-                    finalFile = await imageCompression(formData.imageFile, {
-                        maxSizeMB: 1, // Max 1 MB
-                        maxWidthOrHeight: 1600,
-                        useWebWorker: true,
-                    });
-                }
-
-                const cleanName = finalFile.name
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "") 
-                    .replace(/[^a-zA-Z0-9._-]/g, "_") 
-                    .replace(/\s+/g, "_");            
-
-                const fileName = `${Date.now()}_${cleanName}`;
-
-                const filePath = `noticias/${fileName}`;
-
-                // Subir a Supabase Storage
-                const { error: uploadError } = await supabase.storage
-                    .from(BUCKET_NAME)
-                    .upload(filePath, finalFile, {
-                        cacheControl: "3600",
-                        upsert: false,
-                    });
-
-                if (uploadError) {
-                    console.error(uploadError);
-                    throw new Error("Error subiendo la imagen. Revisa la RLS en Supabase Storage.");
-                }
-
-                // Obtener URL pública
-                const { data: publicURL } = supabase.storage
-                    .from(BUCKET_NAME)
-                    .getPublicUrl(filePath);
-
-                image_url = publicURL.publicUrl;
-                image_path = filePath;
+                body.append("image", formData.imageFile);
             }
 
-
-            // 2. GUARDAR NOTICIA EN SUPABASE
-            const { error: insertError } = await supabase
-                .from("noticias")
-                .insert([
-                    {
-                        title: formData.title,
-                        category: formData.category,
-                        content: formData.content,
-                        image_url,
-                        image_path,
-                    }
-                ])
-                .select('id');
-
-            if (insertError) throw insertError;
-
-            // 3. Redirección en éxito
-            navigate("/admin/dashboard", {
-                state: { message: `Noticia "${formData.title}" publicada correctamente ✔` }
+            const res = await api("/api/noticias", {
+                method: "POST",
+                body,
             });
 
-        } catch (err) {
-            console.error("Error al publicar:", err);
-            setMessage(`❌ Error al publicar la noticia: ${err.message || "Error desconocido"}`);
-            setMessageType("error");
-        }
+            if (!res.ok) {
+                throw new Error("Error al crear noticia");
+            }
 
-        setLoading(false);
+            navigate("/admin/dashboard", {
+                state: {
+                    message: `Noticia "${formData.title}" publicada correctamente ✔`,
+                },
+            });
+        } catch (err) {
+            console.error(err);
+            setMessage("❌ Error al publicar la noticia.");
+            setMessageType("error");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -162,10 +129,15 @@ export default function CreateNewsPage() {
                     </Link>
                 </div>
 
-                {/* Mensajes de Alerta */}
+                {/* Mensajes */}
                 {message && (
-                    <div className={`p-4 rounded-lg mb-6 text-sm font-medium ${messageType === "error" ? "bg-red-100 text-red-700 border border-red-200" : "bg-green-100 text-green-700 border border-green-200"
-                        }`}>
+                    <div
+                        className={`p-4 rounded-lg mb-6 text-sm font-medium ${
+                            messageType === "error"
+                                ? "bg-red-100 text-red-700 border border-red-200"
+                                : "bg-green-100 text-green-700 border border-green-200"
+                        }`}
+                    >
                         {message}
                     </div>
                 )}
@@ -173,97 +145,93 @@ export default function CreateNewsPage() {
                 {/* FORMULARIO */}
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                    {/* COLUMNA PRINCIPAL (CAMPOS) */}
+                    {/* COLUMNA PRINCIPAL */}
                     <div className="lg:col-span-2 space-y-6">
-
-                        {/* Título */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Título</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Título
+                            </label>
                             <input
                                 type="text"
                                 name="title"
-                                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                                className="w-full border border-gray-300 p-3 rounded-lg"
                                 value={formData.title}
                                 onChange={handleChange}
-                                placeholder="Escribe aquí el título de la noticia..."
                                 required
                             />
                         </div>
 
-                        {/* Categoría */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Categoría</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Categoría
+                            </label>
                             <select
                                 name="category"
-                                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white transition duration-150"
+                                className="w-full border border-gray-300 p-3 rounded-lg bg-white"
                                 value={formData.category}
                                 onChange={handleChange}
                             >
-                                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                                {CATEGORIES.map((c) => (
+                                    <option key={c}>{c}</option>
+                                ))}
                             </select>
                         </div>
 
-                        {/* Contenido */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Contenido</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Contenido
+                            </label>
                             <textarea
                                 name="content"
                                 rows="15"
-                                className="w-full border border-gray-300 p-4 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                                className="w-full border border-gray-300 p-4 rounded-lg"
                                 value={formData.content}
                                 onChange={handleChange}
-                                placeholder="Redacta el cuerpo completo de la noticia..."
                                 required
                             />
                         </div>
-
                     </div>
 
-                    {/* COLUMNA LATERAL (IMAGEN Y ACCIÓN) */}
+                    {/* COLUMNA LATERAL */}
                     <div className="lg:col-span-1 space-y-6">
+                        <div className="p-5 border border-gray-200 rounded-lg shadow-md">
+                            <h3 className="text-md font-bold text-gray-800 mb-3 border-b pb-2">
+                                Imagen Destacada
+                            </h3>
 
-                        {/* IMAGEN DESTACADA */}
-                        <div className="p-5 border border-gray-200 rounded-lg bg-white shadow-md">
-                            <h3 className="text-md font-bold text-gray-800 mb-3 border-b pb-2">Imagen Destacada</h3>
-
-                            <label className="block text-sm font-medium text-gray-600 mb-2">
-                                Archivo:
-                            </label>
                             <input
                                 type="file"
                                 accept="image/*"
                                 onChange={handleFileChange}
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                className="block w-full text-sm text-gray-500"
                             />
 
                             {imagePreview && (
-                                <div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
+                                <div className="mt-4 border rounded-lg overflow-hidden">
                                     <img
                                         src={imagePreview}
                                         className="w-full h-40 object-cover"
-                                        alt="Vista previa de la imagen destacada"
+                                        alt="Preview"
                                     />
                                     <p className="p-2 text-xs text-center text-gray-600 bg-gray-50">
-                                        Vista Previa (Se optimizará a 1MB/1600px)
+                                        Vista previa (optimizada)
                                     </p>
                                 </div>
                             )}
                         </div>
 
-                        {/* BOTÓN DE PUBLICAR */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-4 text-lg font-extrabold rounded-lg shadow-xl transition duration-300 transform 
-                                ${loading
-                                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                                    : "bg-sky-700 text-white hover:bg-sky-800 hover:scale-[1.01] active:scale-100"
-                                }
-                            `}
+                            className={`w-full py-4 text-lg font-extrabold rounded-lg shadow-xl transition
+                                ${
+                                    loading
+                                        ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                                        : "bg-sky-700 text-white hover:bg-sky-800"
+                                }`}
                         >
                             {loading ? "Guardando..." : "Guardar y Publicar Noticia"}
                         </button>
-
                     </div>
                 </form>
             </div>

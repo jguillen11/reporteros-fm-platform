@@ -1,34 +1,31 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "../layout/MainLayout";
 import ArticleFlow from "../components/ArticleFlow";
-import { supabase } from "../DB/supabaseClient";
+import { api } from "../services/api";
 
 export default function DeportesPage() {
-
     const [noticias, setNoticias] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-
         const fetchNoticias = async () => {
-            const { data, error } = await supabase
-                .from("noticias")
-                .select("*")
-                .eq("category", "Deportes")
-                .order("created_at", { ascending: false });
+            try {
+                const res = await api("/api/noticias/Deportes");
 
-            if (error) {
-                console.error("Error obteniendo Deportes:", error);
+                if (!res.ok) {
+                    throw new Error("Error en la respuesta del servidor");
+                }
+
+                const data = await res.json();
+                setNoticias(data);
+            } catch (error) {
+                console.error("Error obteniendo noticias Deporte:", error);
+            } finally {
                 setLoading(false);
-                return;
             }
-
-            setNoticias(data);
-            setLoading(false);
         };
 
         fetchNoticias();
-
     }, []);
 
     return (

@@ -1,30 +1,24 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "../layout/MainLayout";
 import ArticleFlow from "../components/ArticleFlow";
-import { supabase } from "../DB/supabaseClient";
+import { api } from "../services/api";
 
-export default function SurSurestePage() {
+export default function EstadosPage() {
 
     const [noticias, setNoticias] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-
         const fetchNoticias = async () => {
-            const { data, error } = await supabase
-                .from("noticias")
-                .select("*")
-                .eq("category", "Estados")
-                .order("created_at", { ascending: false });
-
-            if (error) {
+            try {
+                const res = await api("/api/noticias/Estados");
+                const data = await res.json();
+                setNoticias(data);
+            } catch (error) {
                 console.error("Error obteniendo noticias Estados:", error);
+            } finally {
                 setLoading(false);
-                return;
             }
-
-            setNoticias(data);
-            setLoading(false);
         };
 
         fetchNoticias();

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "../layout/MainLayout";
-import { supabase } from '../DB/supabaseClient';
+import { api } from "../services/api";
 
 function HomePage() {
     const [noticias, setNoticias] = useState([]);
@@ -30,18 +30,20 @@ function HomePage() {
 
     useEffect(() => {
         const fetchNoticias = async () => {
-            const { data, error } = await supabase
-                .from('noticias')
-                .select('*')
-                .order('created_at', { ascending: false });
+            try {
+                const res = await api("/api/noticias");
 
-            if (error) {
-                console.error("Error al cargar noticias:", error);
-            } else {
+                if (!res.ok) {
+                    throw new Error("Error al obtener noticias");
+                }
+
+                const data = await res.json();
                 setNoticias(data);
+            } catch (error) {
+                console.error("Error al cargar noticias:", error);
+            } finally {
+                setLoading(false);
             }
-
-            setLoading(false);
         };
 
         fetchNoticias();
@@ -61,7 +63,7 @@ function HomePage() {
                     Noticias Recientes
                 </h1>
 
-                {/* NOTICIA PRINCIPAL (MISMO ESTILO, PERO RESPONSIVA) */}
+                {/* NOTICIA PRINCIPAL */}
                 {noticias[0] && (
                     <div
                         onClick={() => goToCategoryPage(noticias[0])}
@@ -73,7 +75,7 @@ function HomePage() {
                             className="w-full h-full object-cover brightness-75 group-hover:brightness-90 transition duration-300"
                         />
 
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 to-transparentp-6 sm:p-10 flex flex-col justify-end">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 to-transparent p-6 sm:p-10 flex flex-col justify-end">
                             <span className="text-[10px] sm:text-xs tracking-widest uppercase font-bold px-3 py-1 bg-white/20 rounded-md w-fit backdrop-blur-sm">
                                 {noticias[0].category}
                             </span>
@@ -93,10 +95,9 @@ function HomePage() {
                     </div>
                 )}
 
-
                 {/* GRID DE TARJETAS */}
                 <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
-                    {noticias.slice(1).map(noticia => (
+                    {noticias.slice(1).map((noticia) => (
                         <div
                             key={noticia.id}
                             onClick={() => goToCategoryPage(noticia)}
