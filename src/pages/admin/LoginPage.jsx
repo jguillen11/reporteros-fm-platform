@@ -23,7 +23,7 @@ function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await api("/api/admin/login", {
+            const res = await api("/admin/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
