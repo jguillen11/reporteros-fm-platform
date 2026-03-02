@@ -123,7 +123,7 @@ function EditNewsPage() {
                 cloudData.append("upload_preset", "reporterosenfm"); // Tu preset de la imagen anterior
 
                 const cloudRes = await fetch(
-                    "https://api.cloudinary.com/v1_1/TU_CLOUD_NAME/image/upload", // Pon tu Cloud Name real aquí
+                    "https://api.cloudinary.com/v1_1/devyv3g2n/image/upload", // Pon tu Cloud Name real aquí
                     { method: "POST", body: cloudData }
                 );
 
