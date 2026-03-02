@@ -1,23 +1,34 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
 
-const AuthContext = createContext(null);
+// 1. Definimos el contexto con valores por defecto reales
+const AuthContext = createContext({
+    user: null,
+    isLoggedIn: false,
+    isAdmin: false,
+    login: () => { }, // Función vacía para que nunca sea "not a function"
+    logout: () => { },
+    loading: true
+});
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true); // Iniciamos en true para validar sesión
+    const [loading, setLoading] = useState(true);
 
-    // 🔄 Recuperar sesión al cargar la app
     useEffect(() => {
         const savedUser = localStorage.getItem("admin");
         if (savedUser) {
-            setUser(JSON.parse(savedUser));
+            try {
+                const parsed = JSON.parse(savedUser);
+                setUser(parsed);
+            } catch (e) {
+                localStorage.removeItem("admin");
+            }
         }
         setLoading(false);
     }, []);
 
     const login = (userData) => {
         setUser(userData);
-        // Guardamos el objeto completo para tener el id y el role
         localStorage.setItem("admin", JSON.stringify(userData));
         localStorage.setItem("admin_token", userData.id);
     };
@@ -28,20 +39,27 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem("admin_token");
     };
 
+    // 2. Memorizamos el valor para evitar re-renders innecesarios y asegurar la referencia
+    const value = useMemo(() => ({
+        user,
+        isLoggedIn: !!user,
+        isAdmin: user?.role === "admin",
+        login,
+        logout,
+        loading,
+    }), [user, loading]);
+
     return (
-        <AuthContext.Provider
-            value={{
-                user,
-                isLoggedIn: !!user,
-                isAdmin: user?.role === "admin",
-                login,
-                logout,
-                loading,
-            }}
-        >
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        console.error("useAuth fue llamado fuera de su Provider");
+    }
+    return context;
+};
