@@ -47,7 +47,7 @@ function AdminDashboardPage() {
 
             try {
                 // CAMBIO: Tu servicio api.js ya maneja el JSON, no necesitas await res.json()
-                const data = await api("/api/noticias/admin");
+                const data = await api("/api/noticias");
                 setNewsList(data || []);
             } catch (err) {
                 console.error(err);
