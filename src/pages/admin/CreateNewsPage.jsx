@@ -68,6 +68,7 @@ export default function CreateNewsPage() {
         setImagePreview(URL.createObjectURL(finalFile));
     };
 
+    // Reemplaza tu función handleSubmit por esta:
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -78,35 +79,48 @@ export default function CreateNewsPage() {
         }
 
         setLoading(true);
-        setMessage("");
+        setMessage("Subiendo noticia...");
 
         try {
-            const body = new FormData();
-            body.append("title", formData.title);
-            body.append("category", formData.category);
-            body.append("content", formData.content);
+            let finalImageUrl = "";
 
+            // 1. SI HAY IMAGEN, SUBIRLA A CLOUDINARY PRIMERO
             if (formData.imageFile) {
-                body.append("image", formData.imageFile);
+                setMessage("Subiendo imagen a la nube...");
+                const cloudData = new FormData();
+                cloudData.append("file", formData.imageFile);
+                cloudData.append("upload_preset", "TU_UPLOAD_PRESET"); // EL QUE CREASTE (Unsigned)
+
+                const cloudRes = await fetch(
+                    "https://api.cloudinary.com/v1_1/TU_CLOUD_NAME/image/upload", // TU CLOUD NAME
+                    { method: "POST", body: cloudData }
+                );
+
+                if (!cloudRes.ok) throw new Error("Error al subir imagen a la nube");
+
+                const cloudJson = await cloudRes.json();
+                finalImageUrl = cloudJson.secure_url; // Esta es la URL de internet
             }
 
-            // Enviamos a la API
+            // 2. ENVIAR TODO COMO JSON A TU API (Vercel/Neon)
+            // Ya no enviamos FormData a nuestra API, sino JSON puro.
             await api("/api/noticias", {
                 method: "POST",
-                body,
-                // Nota: No pongas 'Content-Type', el navegador lo pone 
-                // automáticamente con el boundary correcto para FormData
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: formData.title,
+                    category: formData.category,
+                    content: formData.content,
+                    image_url: finalImageUrl, // Enviamos la URL como texto
+                }),
             });
 
-            // Si llegamos aquí, la API respondió success (api.js maneja errores 400/500)
             navigate("/admin/dashboard", {
-                state: {
-                    message: `Noticia "${formData.title}" publicada correctamente ✔`,
-                },
+                state: { message: `Noticia "${formData.title}" publicada correctamente ✔` },
             });
         } catch (err) {
             console.error(err);
-            setMessage("❌ Error al publicar la noticia. Inténtalo de nuevo.");
+            setMessage("❌ Error: " + err.message);
             setMessageType("error");
         } finally {
             setLoading(false);

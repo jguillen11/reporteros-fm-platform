@@ -22,26 +22,28 @@ export default async function handler(req, res) {
     }
 
     // Manejar POST (Crear noticia)
+    // En api/noticias/index.js (Sección POST)
     if (req.method === "POST") {
         try {
-            // NOTA: Si envías FormData con imagen, 
-            // necesitarás un middleware como 'multer' o 'formidable'
-            // para leer req.body en Vercel. 
-            // Si solo envías JSON, puedes usar req.body directamente:
+            // Vercel lee automáticamente el JSON y lo pone en req.body
             const { title, category, content, image_url } = req.body;
 
+            if (!title || !content) {
+                return res.status(400).json({ error: "Título y contenido requeridos" });
+            }
+
             const query = `
-                INSERT INTO noticias (title, category, content, image_url)
-                VALUES ($1, $2, $3, $4)
-                RETURNING *
-            `;
-            const values = [title, category, content, image_url];
+            INSERT INTO noticias (title, category, content, image_url)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `;
+            const values = [title, category, content, image_url || null];
             const { rows } = await pool.query(query, values);
 
             return res.status(201).json(rows[0]);
         } catch (error) {
-            console.error("Error POST:", error);
-            return res.status(500).json({ error: "Error al crear noticia" });
+            console.error("Database Error:", error);
+            return res.status(500).json({ error: "Error al guardar en la base de datos" });
         }
     }
 
