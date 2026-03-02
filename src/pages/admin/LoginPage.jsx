@@ -19,12 +19,13 @@ function LoginPage() {
     // ---------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (loading) return; // Evita múltiples clics
+
         setError("");
         setLoading(true);
+        console.log("Intentando login con:", form.username);
 
         try {
-            // 1. IMPORTANTE: La ruta debe empezar con /api/ para que Vercel la reconozca
-            // 2. No usamos res.ok ni res.json() aquí, porque tu servicio 'api' ya lo hace.
             const data = await api("/api/admin/login", {
                 method: "POST",
                 headers: {
@@ -36,20 +37,26 @@ function LoginPage() {
                 }),
             });
 
-            // Si el backend responde con éxito (data ya es el JSON procesado)
-            if (data.success) {
-                // Guardar sesión - Usamos el ID del admin que devuelve tu login.js
-                localStorage.setItem("admin_token", data.admin?.id || "logged_in");
+            console.log("Datos recibidos del servidor:", data);
+
+            // Cambiamos la condición para ser más flexibles:
+            // Si el backend devuelve success:true O si simplemente viene el objeto admin
+            if (data.success || data.admin) {
+                console.log("Login validado. Guardando sesión...");
+
+                // Guardamos algo que no sea undefined
+                const adminId = data.admin?.id || "admin-session";
+                localStorage.setItem("admin_token", adminId);
+
+                // Forzamos la redirección
                 navigate("/admin/dashboard");
             } else {
-                // Si el servidor responde pero con un error de negocio
                 setError(data.message || "Credenciales incorrectas");
             }
 
         } catch (err) {
-            // Si el fetch falla o res.ok es false, 'api.js' lanza un error que cae aquí
-            console.error("Error capturado:", err.message);
-            setError("Correo o contraseña incorrectos.");
+            console.error("Error detallado en catch:", err);
+            setError("Error de conexión o credenciales inválidas.");
         } finally {
             setLoading(false);
         }
