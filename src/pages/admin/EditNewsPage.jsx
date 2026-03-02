@@ -106,7 +106,6 @@ function EditNewsPage() {
         }
     };
 
-    // 💾 Guardar cambios
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
@@ -114,17 +113,40 @@ function EditNewsPage() {
         setSuccess("");
 
         try {
-            const body = new FormData();
-            body.append("title", formData.title);
-            body.append("category", formData.category);
-            body.append("content", formData.content);
+            let finalImageUrl = formData.image_url;
 
-            if (newImage) body.append("image", newImage);
-            if (removeImage) body.append("removeImage", "true");
+            // 1. SI HAY UNA IMAGEN NUEVA, SUBIRLA A CLOUDINARY
+            if (newImage) {
+                setSuccess("Subiendo nueva imagen...");
+                const cloudData = new FormData();
+                cloudData.append("file", newImage);
+                cloudData.append("upload_preset", "reporterosenfm"); // Tu preset de la imagen anterior
 
+                const cloudRes = await fetch(
+                    "https://api.cloudinary.com/v1_1/TU_CLOUD_NAME/image/upload", // Pon tu Cloud Name real aquí
+                    { method: "POST", body: cloudData }
+                );
+
+                if (!cloudRes.ok) throw new Error("Error al subir la nueva imagen");
+
+                const cloudJson = await cloudRes.json();
+                finalImageUrl = cloudJson.secure_url;
+            }
+            // 2. SI EL USUARIO MARCÓ ELIMINAR IMAGEN
+            else if (removeImage) {
+                finalImageUrl = null;
+            }
+
+            // 3. ENVIAR TODO COMO JSON AL SERVIDOR
             await api(`/api/noticias/${id}`, {
                 method: "PUT",
-                body,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: formData.title,
+                    category: formData.category,
+                    content: formData.content,
+                    image_url: finalImageUrl
+                }),
             });
 
             navigate("/admin/dashboard", {
@@ -132,7 +154,7 @@ function EditNewsPage() {
             });
         } catch (err) {
             console.error(err);
-            setError("❌ Error al guardar los cambios.");
+            setError("❌ Error al guardar los cambios: " + err.message);
         } finally {
             setSaving(false);
         }
