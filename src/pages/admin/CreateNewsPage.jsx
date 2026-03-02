@@ -89,10 +89,10 @@ export default function CreateNewsPage() {
                 setMessage("Subiendo imagen a la nube...");
                 const cloudData = new FormData();
                 cloudData.append("file", formData.imageFile);
-                cloudData.append("upload_preset", "TU_UPLOAD_PRESET"); // EL QUE CREASTE (Unsigned)
+                cloudData.append("upload_preset", "reporterosenfm"); // EL QUE CREASTE (Unsigned)
 
                 const cloudRes = await fetch(
-                    "https://api.cloudinary.com/v1_1/TU_CLOUD_NAME/image/upload", // TU CLOUD NAME
+                    "https://api.cloudinary.com/v1_1/devyv3g2n/image/upload", // TU CLOUD NAME
                     { method: "POST", body: cloudData }
                 );
 
