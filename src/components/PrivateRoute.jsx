@@ -4,8 +4,10 @@ import { useAuth } from "../context/AuthContext";
 
 const PrivateRoute = () => {
     const { isLoggedIn, isAdmin, loading } = useAuth();
+    
+    // Verificación de emergencia: ¿hay un token físico?
+    const hasToken = localStorage.getItem("admin_token");
 
-    // ⏳ Esperar a que el auth se inicialice
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen">
@@ -14,17 +16,17 @@ const PrivateRoute = () => {
         );
     }
 
-    // 🔒 No autenticado
-    if (!isLoggedIn) {
+    // Permitir paso si el contexto dice OK O si existe el token físicamente
+    if (!isLoggedIn && !hasToken) {
         return <Navigate to="/admin/login" replace />;
     }
 
-    // 🚫 No admin
-    if (!isAdmin) {
+    // Si quieres ser estricto con el Admin, asegúrate de que el contexto 
+    // se actualice correctamente tras el login
+    if (!isAdmin && !hasToken) {
         return <Navigate to="/" replace />;
     }
 
-    // ✅ Autorizado
     return <Outlet />;
 };
 

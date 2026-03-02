@@ -1,35 +1,31 @@
-// src/context/AuthContext.jsx
-import { createContext, useContext, useState } from "react";
-import { api } from "../services/api";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Iniciamos en true para validar sesión
 
-    const login = async (email, password) => {
-        const res = await api("/admin/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-        });
-
-        if (!res.ok) {
-            throw new Error("Credenciales inválidas");
+    // 🔄 Recuperar sesión al cargar la app
+    useEffect(() => {
+        const savedUser = localStorage.getItem("admin");
+        if (savedUser) {
+            setUser(JSON.parse(savedUser));
         }
+        setLoading(false);
+    }, []);
 
-        const data = await res.json();
-
-        setUser(data.admin);
-
-        // Persistencia simple
-        localStorage.setItem("admin", JSON.stringify(data.admin));
+    const login = (userData) => {
+        setUser(userData);
+        // Guardamos el objeto completo para tener el id y el role
+        localStorage.setItem("admin", JSON.stringify(userData));
+        localStorage.setItem("admin_token", userData.id);
     };
 
     const logout = () => {
         setUser(null);
         localStorage.removeItem("admin");
+        localStorage.removeItem("admin_token");
     };
 
     return (

@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserShield, FaSignInAlt, FaLock } from "react-icons/fa";
 import { api } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 function LoginPage() {
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const [form, setForm] = useState({
         username: "",
@@ -14,57 +16,39 @@ function LoginPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // ---------------------------------------
-    // 🔐 Enviar Login
-    // ---------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (loading) return; // Evita múltiples clics
-
         setError("");
         setLoading(true);
-        console.log("Intentando login con:", form.username);
 
         try {
+            // Petición a la API de Vercel
             const data = await api("/api/admin/login", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     email: form.username,
                     password: form.password,
                 }),
             });
 
-            console.log("Datos recibidos del servidor:", data);
+            if (data.success) {
+                // ✅ Sincronizamos con el Contexto Global
+                login(data.admin);
 
-            // Cambiamos la condición para ser más flexibles:
-            // Si el backend devuelve success:true O si simplemente viene el objeto admin
-            if (data.success || data.admin) {
-                console.log("Login validado. Guardando sesión...");
-
-                // Guardamos algo que no sea undefined
-                const adminId = data.admin?.id || "admin-session";
-                localStorage.setItem("admin_token", adminId);
-
-                // Forzamos la redirección
+                // Redirigimos
                 navigate("/admin/dashboard");
             } else {
                 setError(data.message || "Credenciales incorrectas");
             }
-
         } catch (err) {
-            console.error("Error detallado en catch:", err);
-            setError("Error de conexión o credenciales inválidas.");
+            console.error("Error en login:", err);
+            setError("Correo o contraseña incorrectos.");
         } finally {
             setLoading(false);
         }
     };
 
-    // ---------------------------------------
-    // ✏️ Inputs
-    // ---------------------------------------
     const handleChange = (field, value) => {
         setForm({ ...form, [field]: value });
         if (error) setError("");
@@ -76,7 +60,6 @@ function LoginPage() {
                 onSubmit={handleSubmit}
                 className="bg-white w-full max-w-sm p-10 rounded-2xl shadow-xl"
             >
-                {/* Encabezado */}
                 <div className="flex flex-col items-center mb-8">
                     <FaUserShield className="text-4xl text-red-600 mb-3" />
                     <h2 className="text-3xl text-center font-extrabold text-gray-800">
@@ -84,14 +67,12 @@ function LoginPage() {
                     </h2>
                 </div>
 
-                {/* Error */}
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-center">
                         {error}
                     </div>
                 )}
 
-                {/* Email */}
                 <div className="mb-6">
                     <div className="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-red-500">
                         <span className="p-3 text-gray-400">
@@ -108,7 +89,6 @@ function LoginPage() {
                     </div>
                 </div>
 
-                {/* Password */}
                 <div className="mb-8">
                     <div className="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-red-500">
                         <span className="p-3 text-gray-400">
@@ -125,7 +105,6 @@ function LoginPage() {
                     </div>
                 </div>
 
-                {/* Botón */}
                 <button
                     type="submit"
                     disabled={loading}
