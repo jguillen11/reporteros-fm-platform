@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
 
-// Función auxiliar para formatear la fecha
 const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const options = {
@@ -17,7 +16,8 @@ const formatDate = (dateString) => {
 };
 
 function AdminDashboardPage() {
-    const { isAuthenticated, logout } = useAuth();
+    // 1. CAMBIO: Usamos isLoggedIn en lugar de isAuthenticated
+    const { isLoggedIn, logout, loading: authLoading } = useAuth();
     const navigate = useNavigate();
 
     const [newsList, setNewsList] = useState([]);
@@ -25,30 +25,29 @@ function AdminDashboardPage() {
     const [isLoadingData, setIsLoadingData] = useState(false);
     const [deleteError, setDeleteError] = useState("");
 
-    // 🔐 Proteger ruta
+    // 2. CAMBIO: Proteger ruta usando el estado del contexto
     useEffect(() => {
-        if (!isAuthenticated()) {
+        // Si ya terminó de cargar el auth y no está logueado, fuera.
+        if (!authLoading && !isLoggedIn) {
             navigate("/admin/login", { replace: true });
         }
-    }, []);
+    }, [isLoggedIn, authLoading, navigate]);
 
     // ---------------------------------------
     // 🔥 Cargar Noticias (NEON)
     // ---------------------------------------
     useEffect(() => {
         const fetchNews = async () => {
+            // No intentar cargar si no hay sesión
+            if (!isLoggedIn) return;
+
             setIsLoadingData(true);
             setDeleteError("");
             setMessage("");
 
             try {
-                const res = await api("/api/noticias/admin");
-
-                if (!res.ok) {
-                    throw new Error("Error al cargar noticias");
-                }
-
-                const data = await res.json();
+                // CAMBIO: Tu servicio api.js ya maneja el JSON, no necesitas await res.json()
+                const data = await api("/api/noticias/admin");
                 setNewsList(data || []);
             } catch (err) {
                 console.error(err);
@@ -59,8 +58,8 @@ function AdminDashboardPage() {
             }
         };
 
-        fetchNews();
-    }, []);
+        if (!authLoading) fetchNews();
+    }, [isLoggedIn, authLoading]);
 
     // ---------------------------------------
     // 🗑️ Eliminar Noticia (NEON)
@@ -75,13 +74,10 @@ function AdminDashboardPage() {
         setMessage("");
 
         try {
-            const res = await api(`/api/noticias/${id}`, {
+            // CAMBIO: Usamos el servicio api directamente
+            await api(`/api/noticias/${id}`, {
                 method: "DELETE",
             });
-
-            if (!res.ok) {
-                throw new Error("Error al eliminar");
-            }
 
             setNewsList((prev) => prev.filter((n) => n.id !== id));
             setMessage(`Noticia "${title}" eliminada correctamente.`);
@@ -96,16 +92,22 @@ function AdminDashboardPage() {
         navigate("/admin/login");
     };
 
+    // 3. CAMBIO: Si el auth está cargando, mostramos un spinner
+    if (authLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="animate-spin w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-8 lg:p-12">
             <div className="max-w-7xl mx-auto">
-
-                {/* Header */}
                 <header className="flex flex-col sm:flex-row justify-between items-start mb-8 border-b border-gray-300 pb-4">
                     <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 mb-4 sm:mb-0">
                         📰 Panel de Noticias
                     </h1>
-
                     <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                         <Link
                             to="/admin/create"
@@ -113,14 +115,12 @@ function AdminDashboardPage() {
                         >
                             + Nueva Noticia
                         </Link>
-
                         <Link
                             to="/"
                             className="bg-slate-500 text-white px-5 py-2 rounded-lg font-medium shadow-md hover:bg-slate-600 text-center"
                         >
                             Ver Sitio Web
                         </Link>
-
                         <button
                             onClick={handleLogout}
                             className="bg-white text-gray-700 px-5 py-2 border border-gray-300 rounded-lg font-medium shadow-md hover:bg-gray-200"
@@ -130,74 +130,66 @@ function AdminDashboardPage() {
                     </div>
                 </header>
 
-                {/* Mensajes */}
                 {message && (
                     <div className="p-4 mb-6 rounded-md bg-green-50 border border-green-300 text-green-800">
                         {message}
                     </div>
                 )}
-
                 {deleteError && (
                     <div className="p-4 mb-6 rounded-md bg-red-50 border border-red-300 text-red-800">
                         {deleteError}
                     </div>
                 )}
 
-                {/* Contenedor principal */}
                 <div className="bg-white shadow-xl rounded-xl border">
                     <h2 className="text-xl font-semibold p-5 border-b bg-gray-50">
                         Lista de Noticias ({newsList.length})
                     </h2>
-
                     {isLoadingData && (
                         <div className="p-8 text-center text-gray-600">
                             Cargando noticias...
                         </div>
                     )}
-
                     {!isLoadingData && newsList.length === 0 ? (
                         <div className="p-10 text-center text-gray-500">
                             No hay noticias registradas.
                         </div>
                     ) : (
-                        <div className="overflow-x-auto hidden md:block">
+                        <div className="overflow-x-auto">
                             <table className="min-w-full divide-y">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold">ID</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold">Título</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold">Categoría</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold">Fecha</th>
                                         <th className="px-6 py-3 text-center text-xs font-semibold">Acciones</th>
                                     </tr>
                                 </thead>
-
-                                <tbody>
+                                <tbody className="bg-white divide-y divide-gray-200">
                                     {newsList.map((news) => (
                                         <tr key={news.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 text-sm font-mono">
-                                                {news.id.substring(0, 8)}...
-                                            </td>
-                                            <td className="px-6 py-4 text-sm font-medium">
+                                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
                                                 {news.title}
                                             </td>
-                                            <td className="px-6 py-4 text-sm">
+                                            <td className="px-6 py-4 text-sm text-gray-500">
                                                 {news.category}
                                             </td>
-                                            <td className="px-6 py-4 text-sm">
+                                            <td className="px-6 py-4 text-sm text-gray-500">
                                                 {formatDate(news.created_at)}
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <div className="flex justify-center gap-3">
                                                     <Link
                                                         to={`/admin/edit/${news.id}`}
-                                                        className="text-blue-600 hover:text-blue-800"
+                                                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                                                        title="Editar"
                                                     >
                                                         ✏️
                                                     </Link>
                                                     <button
                                                         onClick={() => handleDelete(news.id, news.title)}
-                                                        className="text-red-600 hover:text-red-800"
+                                                        className="text-red-600 hover:text-red-800 transition-colors"
+                                                        title="Eliminar"
                                                     >
                                                         🗑
                                                     </button>

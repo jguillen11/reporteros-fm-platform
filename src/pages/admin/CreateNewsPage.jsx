@@ -1,26 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Añadimos useEffect
 import { useNavigate, Link } from "react-router-dom";
 import imageCompression from "browser-image-compression";
 import { api } from "../../services/api";
+import { useAuth } from "../../context/AuthContext"; // Importamos el hook de auth
 
 const CATEGORIES = [
-    "Informacion",
-    "Municipios",
-    "Estados",
-    "Policiacas",
-    "Espectaculos",
-    "Deportes",
-    "Finanzas",
-    "SurSureste",
-    "Nacionales",
-    "Cultura",
+    "Informacion", "Municipios", "Estados", "Policiacas",
+    "Espectaculos", "Deportes", "Finanzas", "SurSureste",
+    "Nacionales", "Cultura",
 ];
 
 export default function CreateNewsPage() {
     const navigate = useNavigate();
+    const { isLoggedIn, loading: authLoading } = useAuth(); // Obtenemos el estado de auth
 
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         title: "",
@@ -28,13 +24,15 @@ export default function CreateNewsPage() {
         content: "",
         imageFile: null,
     });
-
     const [imagePreview, setImagePreview] = useState(null);
-    const [loading, setLoading] = useState(false);
 
-    // ---------------------------------------
-    // ⚙️ Manejadores
-    // ---------------------------------------
+    // 🔐 1. Protección de ruta: Si no está logueado, redirigir al login
+    useEffect(() => {
+        if (!authLoading && !isLoggedIn) {
+            navigate("/admin/login", { replace: true });
+        }
+    }, [isLoggedIn, authLoading, navigate]);
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -48,28 +46,32 @@ export default function CreateNewsPage() {
 
         let finalFile = file;
 
+        // Optimización si pesa más de 1MB
         if (file.size > 1024 * 1024) {
-            setMessage("La imagen se optimizará antes de subirse.");
+            setMessage("Optimizando imagen...");
             setMessageType("success");
-
-            finalFile = await imageCompression(file, {
-                maxSizeMB: 1,
-                maxWidthOrHeight: 1600,
-                useWebWorker: true,
-            });
+            try {
+                finalFile = await imageCompression(file, {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1600,
+                    useWebWorker: true,
+                });
+            } catch (error) {
+                console.error("Error comprimiendo:", error);
+            }
         }
 
         setFormData({ ...formData, imageFile: finalFile });
+
+        // Limpiar preview anterior para evitar fugas de memoria
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
         setImagePreview(URL.createObjectURL(finalFile));
     };
 
-    // ---------------------------------------
-    // 💾 Guardar Noticia (NEON)
-    // ---------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.title || !formData.content) {
+        if (!formData.title.trim() || !formData.content.trim()) {
             setMessage("El título y el contenido son obligatorios.");
             setMessageType("error");
             return;
@@ -77,7 +79,6 @@ export default function CreateNewsPage() {
 
         setLoading(true);
         setMessage("");
-        setMessageType("");
 
         try {
             const body = new FormData();
@@ -89,15 +90,15 @@ export default function CreateNewsPage() {
                 body.append("image", formData.imageFile);
             }
 
-            const res = await api("/api/noticias", {
+            // Enviamos a la API
+            await api("/api/noticias", {
                 method: "POST",
                 body,
+                // Nota: No pongas 'Content-Type', el navegador lo pone 
+                // automáticamente con el boundary correcto para FormData
             });
 
-            if (!res.ok) {
-                throw new Error("Error al crear noticia");
-            }
-
+            // Si llegamos aquí, la API respondió success (api.js maneja errores 400/500)
             navigate("/admin/dashboard", {
                 state: {
                     message: `Noticia "${formData.title}" publicada correctamente ✔`,
@@ -105,12 +106,15 @@ export default function CreateNewsPage() {
             });
         } catch (err) {
             console.error(err);
-            setMessage("❌ Error al publicar la noticia.");
+            setMessage("❌ Error al publicar la noticia. Inténtalo de nuevo.");
             setMessageType("error");
         } finally {
             setLoading(false);
         }
     };
+
+    // Si el sistema de auth está verificando la sesión, mostramos loader
+    if (authLoading) return <div className="p-10 text-center">Verificando sesión...</div>;
 
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-10">
@@ -118,43 +122,34 @@ export default function CreateNewsPage() {
 
                 {/* Encabezado */}
                 <div className="mb-8 border-b pb-4 flex justify-between items-center">
-                    <h1 className="text-4xl font-extrabold text-gray-900">
-                        Publicar Nuevo Artículo
+                    <h1 className="text-3xl font-extrabold text-gray-900">
+                        Publicar Artículo
                     </h1>
                     <Link
                         to="/admin/dashboard"
-                        className="text-sm font-medium text-gray-600 hover:text-blue-600 transition"
+                        className="text-sm font-medium text-blue-600 hover:underline"
                     >
                         ← Volver al Panel
                     </Link>
                 </div>
 
-                {/* Mensajes */}
+                {/* Mensajes de estado */}
                 {message && (
-                    <div
-                        className={`p-4 rounded-lg mb-6 text-sm font-medium ${
-                            messageType === "error"
-                                ? "bg-red-100 text-red-700 border border-red-200"
-                                : "bg-green-100 text-green-700 border border-green-200"
-                        }`}
-                    >
+                    <div className={`p-4 rounded-lg mb-6 border ${messageType === "error" ? "bg-red-50 border-red-200 text-red-700" : "bg-blue-50 border-blue-200 text-blue-700"
+                        }`}>
                         {message}
                     </div>
                 )}
 
-                {/* FORMULARIO */}
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                    {/* COLUMNA PRINCIPAL */}
-                    <div className="lg:col-span-2 space-y-6">
+                    {/* Campos de texto */}
+                    <div className="lg:col-span-2 space-y-5">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Título
-                            </label>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Título</label>
                             <input
                                 type="text"
                                 name="title"
-                                className="w-full border border-gray-300 p-3 rounded-lg"
+                                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none"
                                 value={formData.title}
                                 onChange={handleChange}
                                 required
@@ -162,29 +157,25 @@ export default function CreateNewsPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Categoría
-                            </label>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Categoría</label>
                             <select
                                 name="category"
-                                className="w-full border border-gray-300 p-3 rounded-lg bg-white"
+                                className="w-full border border-gray-300 p-3 rounded-lg bg-white outline-none"
                                 value={formData.category}
                                 onChange={handleChange}
                             >
                                 {CATEGORIES.map((c) => (
-                                    <option key={c}>{c}</option>
+                                    <option key={c} value={c}>{c}</option>
                                 ))}
                             </select>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Contenido
-                            </label>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Contenido</label>
                             <textarea
                                 name="content"
-                                rows="15"
-                                className="w-full border border-gray-300 p-4 rounded-lg"
+                                rows="12"
+                                className="w-full border border-gray-300 p-4 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none resize-none"
                                 value={formData.content}
                                 onChange={handleChange}
                                 required
@@ -192,30 +183,25 @@ export default function CreateNewsPage() {
                         </div>
                     </div>
 
-                    {/* COLUMNA LATERAL */}
+                    {/* Sidebar de imagen y envío */}
                     <div className="lg:col-span-1 space-y-6">
-                        <div className="p-5 border border-gray-200 rounded-lg shadow-md">
-                            <h3 className="text-md font-bold text-gray-800 mb-3 border-b pb-2">
-                                Imagen Destacada
-                            </h3>
+                        <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
+                            <h3 className="font-bold text-gray-800 mb-4">Imagen Destacada</h3>
 
                             <input
                                 type="file"
                                 accept="image/*"
                                 onChange={handleFileChange}
-                                className="block w-full text-sm text-gray-500"
+                                className="text-sm text-gray-600 mb-4 w-full"
                             />
 
                             {imagePreview && (
-                                <div className="mt-4 border rounded-lg overflow-hidden">
+                                <div className="rounded-lg overflow-hidden border bg-white">
                                     <img
                                         src={imagePreview}
-                                        className="w-full h-40 object-cover"
+                                        className="w-full h-48 object-cover"
                                         alt="Preview"
                                     />
-                                    <p className="p-2 text-xs text-center text-gray-600 bg-gray-50">
-                                        Vista previa (optimizada)
-                                    </p>
                                 </div>
                             )}
                         </div>
@@ -223,14 +209,10 @@ export default function CreateNewsPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-4 text-lg font-extrabold rounded-lg shadow-xl transition
-                                ${
-                                    loading
-                                        ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                                        : "bg-sky-700 text-white hover:bg-sky-800"
+                            className={`w-full py-4 text-white text-lg font-bold rounded-lg shadow-lg transition-all ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-sky-700 hover:bg-sky-800 active:scale-95"
                                 }`}
                         >
-                            {loading ? "Guardando..." : "Guardar y Publicar Noticia"}
+                            {loading ? "Publicando..." : "Publicar Noticia"}
                         </button>
                     </div>
                 </form>
