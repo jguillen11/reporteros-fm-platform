@@ -75,7 +75,7 @@ function AdminDashboardPage() {
 
         try {
             // CAMBIO: Usamos el servicio api directamente
-            await api(`/api/noticias/${id}`, {
+            await api(`/noticias/${id}`, {
                 method: "DELETE",
             });
 
