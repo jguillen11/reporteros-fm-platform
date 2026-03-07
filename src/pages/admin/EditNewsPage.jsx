@@ -133,7 +133,7 @@ function EditNewsPage() {
 
             // 2. ENVÍO A TU API EN VERCEL
             setSuccess("Guardando cambios en el servidor...");
-            await api(`/api/noticias/${id}`, {
+            await api(`/noticias/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

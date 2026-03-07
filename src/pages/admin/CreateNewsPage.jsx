@@ -104,7 +104,7 @@ export default function CreateNewsPage() {
 
             // 2. ENVIAR TODO COMO JSON A TU API (Vercel/Neon)
             // Ya no enviamos FormData a nuestra API, sino JSON puro.
-            await api("/api/noticias", {
+            await api("/noticias", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
