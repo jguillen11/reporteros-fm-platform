@@ -43,7 +43,7 @@ function EditNewsPage() {
             setLoading(true);
             setError("");
             try {
-                const data = await api(`/api/noticias/${id}`);
+                const data = await api(`/noticias/${id}`);
                 setFormData({
                     title: data.title || "",
                     category: data.category || CATEGORIES[0],
