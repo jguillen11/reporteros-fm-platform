@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import imageCompression from "browser-image-compression";
 import { api } from "../../services/api";
-import { useAuth } from "../../context/AuthContext"; // 1. Importar Auth
+import { useAuth } from "../../context/AuthContext";
 
 const CATEGORIES = [
     "Informacion", "Municipios", "Estados", "Policiacas",
@@ -13,7 +13,7 @@ const CATEGORIES = [
 function EditNewsPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { isLoggedIn, loading: authLoading } = useAuth(); // 2. Obtener estado auth
+    const { isLoggedIn, loading: authLoading } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -31,35 +31,26 @@ function EditNewsPage() {
     const [removeImage, setRemoveImage] = useState(false);
     const [imagePreview, setImagePreview] = useState(null);
 
-    // 🔐 3. Protección de ruta
     useEffect(() => {
         if (!authLoading && !isLoggedIn) {
             navigate("/admin/login", { replace: true });
         }
     }, [isLoggedIn, authLoading, navigate]);
 
-    // 🔄 4. Cargar noticia (Actualizado para usar api.js correctamente)
     useEffect(() => {
         async function load() {
-            if (!isLoggedIn) return; // No cargar si no hay sesión
-
+            if (!isLoggedIn) return;
             setLoading(true);
             setError("");
-
             try {
-                // El servicio api ya maneja el res.ok y res.json()
                 const data = await api(`/api/noticias/${id}`);
-
                 setFormData({
                     title: data.title || "",
                     category: data.category || CATEGORIES[0],
                     content: data.content || "",
                     image_url: data.image_url || "",
                 });
-
-                if (data.image_url) {
-                    setImagePreview(data.image_url);
-                }
+                if (data.image_url) setImagePreview(data.image_url);
             } catch (err) {
                 console.error(err);
                 setError("La noticia no existe o hubo un error de conexión.");
@@ -67,11 +58,9 @@ function EditNewsPage() {
                 setLoading(false);
             }
         }
-
         if (!authLoading) load();
     }, [id, isLoggedIn, authLoading]);
 
-    // 🧠 Handlers
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -81,20 +70,23 @@ function EditNewsPage() {
         if (!file) return;
 
         let finalFile = file;
-        if (file.size > 1024 * 1024) {
-            setSuccess("Optimizando imagen...");
-            finalFile = await imageCompression(file, {
-                maxSizeMB: 1,
-                maxWidthOrHeight: 1600,
-                useWebWorker: true,
-            });
+        try {
+            if (file.size > 1024 * 1024) {
+                setSuccess("Optimizando imagen...");
+                finalFile = await imageCompression(file, {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1600,
+                    useWebWorker: true,
+                });
+            }
+            setNewImage(finalFile);
+            setRemoveImage(false);
+            if (imagePreview && imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+            setImagePreview(URL.createObjectURL(finalFile));
+            setSuccess("📸 Nueva imagen lista.");
+        } catch (err) {
+            setError("Error al procesar la imagen.");
         }
-
-        setNewImage(finalFile);
-        setRemoveImage(false);
-        if (imagePreview && imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
-        setImagePreview(URL.createObjectURL(finalFile));
-        setSuccess("📸 Nueva imagen lista.");
     };
 
     const handleRemoveImage = () => {
@@ -115,29 +107,32 @@ function EditNewsPage() {
         try {
             let finalImageUrl = formData.image_url;
 
-            // 1. SI HAY UNA IMAGEN NUEVA, SUBIRLA A CLOUDINARY
+            // 1. SUBIDA A CLOUDINARY (CON MANEJO DE ERRORES MEJORADO)
             if (newImage) {
                 setSuccess("Subiendo nueva imagen...");
                 const cloudData = new FormData();
                 cloudData.append("file", newImage);
-                cloudData.append("upload_preset", "reporterosenfm"); // Tu preset de la imagen anterior
+                cloudData.append("upload_preset", "reporterosenfm");
 
                 const cloudRes = await fetch(
-                    "https://api.cloudinary.com/v1_1/devyv3g2n/image/upload", // Pon tu Cloud Name real aquí
+                    "https://api.cloudinary.com/v1_1/devyv3g2n/image/upload",
                     { method: "POST", body: cloudData }
                 );
 
-                if (!cloudRes.ok) throw new Error("Error al subir la nueva imagen");
+                // Si Cloudinary falla, lanzamos error antes de tocar nuestra API
+                if (!cloudRes.ok) {
+                    const cloudErr = await cloudRes.json();
+                    throw new Error(cloudErr.error?.message || "Error en Cloudinary");
+                }
 
                 const cloudJson = await cloudRes.json();
                 finalImageUrl = cloudJson.secure_url;
-            }
-            // 2. SI EL USUARIO MARCÓ ELIMINAR IMAGEN
-            else if (removeImage) {
+            } else if (removeImage) {
                 finalImageUrl = null;
             }
 
-            // 3. ENVIAR TODO COMO JSON AL SERVIDOR
+            // 2. ENVÍO A TU API EN VERCEL
+            setSuccess("Guardando cambios en el servidor...");
             await api(`/api/noticias/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -154,13 +149,13 @@ function EditNewsPage() {
             });
         } catch (err) {
             console.error(err);
-            setError("❌ Error al guardar los cambios: " + err.message);
+            // Aquí capturamos el error para que NO rompa el renderizado
+            setError("❌ Error: " + err.message);
         } finally {
             setSaving(false);
         }
     };
 
-    // Renderizado condicional para carga de Auth o Datos
     if (authLoading || (loading && !error)) {
         return (
             <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -182,8 +177,8 @@ function EditNewsPage() {
                     </Link>
                 </div>
 
-                {error && <div className="p-4 mb-6 bg-red-50 border border-red-200 text-red-700 rounded-lg">{error}</div>}
-                {success && <div className="p-4 mb-6 bg-green-50 border border-green-200 text-green-700 rounded-lg">{success}</div>}
+                {error && <div className="p-4 mb-6 bg-red-50 border border-red-200 text-red-700 rounded-lg font-medium">{error}</div>}
+                {success && <div className="p-4 mb-6 bg-green-50 border border-green-200 text-green-700 rounded-lg font-medium">{success}</div>}
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-6">
@@ -264,8 +259,9 @@ function EditNewsPage() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className={`w-full py-4 font-bold rounded-lg text-white shadow-lg transition-all ${saving ? "bg-gray-400" : "bg-green-600 hover:bg-green-700 active:scale-95"
-                                }`}
+                            className={`w-full py-4 font-bold rounded-lg text-white shadow-lg transition-all ${
+                                saving ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700 active:scale-95"
+                            }`}
                         >
                             {saving ? "Guardando..." : "Guardar Cambios"}
                         </button>
