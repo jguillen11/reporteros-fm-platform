@@ -10,6 +10,8 @@ const CATEGORIES = [
     "Nacionales", "Cultura",
 ];
 
+const MAX_IMAGES = 5;
+
 function EditNewsPage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -27,15 +29,21 @@ function EditNewsPage() {
         image_url: "",
     });
 
-    const [newImage, setNewImage] = useState(null);
-    const [removeImage, setRemoveImage] = useState(false);
-    const [imagePreview, setImagePreview] = useState(null);
+    // Imágenes existentes (URLs de Cloudinary ya guardadas)
+    const [existingImages, setExistingImages] = useState([]); // ["url1", "url2", ...]
+
+    // Nuevas imágenes a subir { file, preview }
+    const [newImages, setNewImages] = useState([]);
 
     useEffect(() => {
         if (!authLoading && !isLoggedIn) {
             navigate("/admin/login", { replace: true });
         }
     }, [isLoggedIn, authLoading, navigate]);
+
+    useEffect(() => {
+        return () => newImages.forEach(img => URL.revokeObjectURL(img.preview));
+    }, [newImages]);
 
     useEffect(() => {
         async function load() {
@@ -50,7 +58,11 @@ function EditNewsPage() {
                     content: data.content || "",
                     image_url: data.image_url || "",
                 });
-                if (data.image_url) setImagePreview(data.image_url);
+                // Cargar imágenes existentes: portada + galería
+                const allImages = [];
+                if (data.image_url) allImages.push(data.image_url);
+                if (Array.isArray(data.images)) allImages.push(...data.images);
+                setExistingImages(allImages);
             } catch (err) {
                 console.error(err);
                 setError("La noticia no existe o hubo un error de conexión.");
@@ -65,37 +77,65 @@ function EditNewsPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleImageChange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    const totalImages = existingImages.length + newImages.length;
 
-        let finalFile = file;
-        try {
-            if (file.size > 1024 * 1024) {
-                setSuccess("Optimizando imagen...");
-                finalFile = await imageCompression(file, {
-                    maxSizeMB: 1,
-                    maxWidthOrHeight: 1600,
-                    useWebWorker: true,
-                });
-            }
-            setNewImage(finalFile);
-            setRemoveImage(false);
-            if (imagePreview && imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
-            setImagePreview(URL.createObjectURL(finalFile));
-            setSuccess("📸 Nueva imagen lista.");
-        } catch (err) {
-            setError("Error al procesar la imagen.");
+    const handleFilesChange = async (e) => {
+        const selected = Array.from(e.target.files);
+        const remaining = MAX_IMAGES - totalImages;
+
+        if (remaining <= 0) {
+            setError(`Máximo ${MAX_IMAGES} imágenes por noticia.`);
+            return;
         }
+
+        const toProcess = selected.slice(0, remaining);
+        setSuccess("Procesando imágenes...");
+
+        const processed = await Promise.all(
+            toProcess.map(async (file) => {
+                let finalFile = file;
+                if (file.size > 1024 * 1024) {
+                    try {
+                        finalFile = await imageCompression(file, {
+                            maxSizeMB: 1,
+                            maxWidthOrHeight: 1600,
+                            useWebWorker: true,
+                        });
+                    } catch (err) {
+                        console.error("Error comprimiendo:", err);
+                    }
+                }
+                return { file: finalFile, preview: URL.createObjectURL(finalFile) };
+            })
+        );
+
+        setNewImages(prev => [...prev, ...processed]);
+        setSuccess("");
+        e.target.value = "";
     };
 
-    const handleRemoveImage = () => {
-        if (window.confirm("¿Eliminar la imagen actual?")) {
-            setRemoveImage(true);
-            setNewImage(null);
-            setImagePreview(null);
-            setSuccess("⚠ Imagen marcada para eliminación.");
-        }
+    const removeExistingImage = (index) => {
+        setExistingImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeNewImage = (index) => {
+        setNewImages(prev => {
+            URL.revokeObjectURL(prev[index].preview);
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    const uploadToCloudinary = async (file) => {
+        const cloudData = new FormData();
+        cloudData.append("file", file);
+        cloudData.append("upload_preset", "reporterosenfm");
+        const res = await fetch(
+            "https://api.cloudinary.com/v1_1/devyv3g2n/image/upload",
+            { method: "POST", body: cloudData }
+        );
+        if (!res.ok) throw new Error("Error al subir imagen a Cloudinary");
+        const json = await res.json();
+        return json.secure_url;
     };
 
     const handleSubmit = async (e) => {
@@ -105,34 +145,22 @@ function EditNewsPage() {
         setSuccess("");
 
         try {
-            let finalImageUrl = formData.image_url;
-
-            // 1. SUBIDA A CLOUDINARY (CON MANEJO DE ERRORES MEJORADO)
-            if (newImage) {
-                setSuccess("Subiendo nueva imagen...");
-                const cloudData = new FormData();
-                cloudData.append("file", newImage);
-                cloudData.append("upload_preset", "reporterosenfm");
-
-                const cloudRes = await fetch(
-                    "https://api.cloudinary.com/v1_1/devyv3g2n/image/upload",
-                    { method: "POST", body: cloudData }
+            // Subir nuevas imágenes a Cloudinary
+            let uploadedUrls = [];
+            if (newImages.length > 0) {
+                setSuccess("Subiendo imágenes nuevas...");
+                uploadedUrls = await Promise.all(
+                    newImages.map(img => uploadToCloudinary(img.file))
                 );
-
-                // Si Cloudinary falla, lanzamos error antes de tocar nuestra API
-                if (!cloudRes.ok) {
-                    const cloudErr = await cloudRes.json();
-                    throw new Error(cloudErr.error?.message || "Error en Cloudinary");
-                }
-
-                const cloudJson = await cloudRes.json();
-                finalImageUrl = cloudJson.secure_url;
-            } else if (removeImage) {
-                finalImageUrl = null;
             }
 
-            // 2. ENVÍO A TU API EN VERCEL
-            setSuccess("Guardando cambios en el servidor...");
+            // Combinar existentes + nuevas
+            const allUrls = [...existingImages, ...uploadedUrls];
+            const image_url = allUrls[0] || null;   // Portada = primera
+            const images = allUrls.slice(1);         // Resto = galería
+
+            setSuccess("Guardando cambios...");
+
             await api(`/noticias/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -140,7 +168,8 @@ function EditNewsPage() {
                     title: formData.title,
                     category: formData.category,
                     content: formData.content,
-                    image_url: finalImageUrl
+                    image_url,
+                    images,
                 }),
             });
 
@@ -149,7 +178,6 @@ function EditNewsPage() {
             });
         } catch (err) {
             console.error(err);
-            // Aquí capturamos el error para que NO rompa el renderizado
             setError("❌ Error: " + err.message);
         } finally {
             setSaving(false);
@@ -221,39 +249,65 @@ function EditNewsPage() {
                         </div>
                     </div>
 
+                    {/* Sidebar imágenes */}
                     <div className="space-y-6">
                         <div className="p-5 bg-gray-50 border rounded-lg shadow-inner">
-                            <h3 className="font-bold text-gray-800 mb-4">Imagen del Artículo</h3>
-                            {imagePreview && !removeImage ? (
-                                <div className="relative group">
-                                    <img
-                                        src={imagePreview}
-                                        className="w-full h-48 object-cover rounded-lg border shadow-sm"
-                                        alt="Preview"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleRemoveImage}
-                                        className="mt-3 w-full bg-white text-red-600 border border-red-200 py-2 rounded hover:bg-red-50 transition"
-                                    >
-                                        🗑 Eliminar imagen
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                                    Sin imagen seleccionada
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-gray-800">Imágenes</h3>
+                                <span className="text-xs text-gray-500">{totalImages}/{MAX_IMAGES}</span>
+                            </div>
+
+                            {/* Grid de imágenes existentes + nuevas */}
+                            {totalImages > 0 && (
+                                <div className="grid grid-cols-2 gap-2 mb-4">
+                                    {existingImages.map((url, i) => (
+                                        <div key={`ex-${i}`} className="relative group rounded-lg overflow-hidden border bg-white">
+                                            {i === 0 && (
+                                                <span className="absolute top-1 left-1 z-10 text-[10px] font-bold bg-sky-600 text-white px-1.5 py-0.5 rounded">
+                                                    Portada
+                                                </span>
+                                            )}
+                                            <img src={url} alt={`img-${i}`} className="w-full h-24 object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeExistingImage(i)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {newImages.map((img, i) => (
+                                        <div key={`new-${i}`} className="relative group rounded-lg overflow-hidden border border-dashed border-sky-400 bg-white">
+                                            <span className="absolute top-1 left-1 z-10 text-[10px] font-bold bg-green-500 text-white px-1.5 py-0.5 rounded">
+                                                Nueva
+                                            </span>
+                                            <img src={img.preview} alt={`new-${i}`} className="w-full h-24 object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeNewImage(i)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
-                            <div className="mt-4">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Subir nueva</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                    className="w-full text-sm"
-                                />
-                            </div>
+                            {/* Botón agregar más */}
+                            {totalImages < MAX_IMAGES && (
+                                <label className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-sky-400 hover:bg-sky-50 transition text-sm text-gray-500 hover:text-sky-600">
+                                    <span>+ Agregar imágenes</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleFilesChange}
+                                        className="hidden"
+                                    />
+                                </label>
+                            )}
                         </div>
 
                         <button
