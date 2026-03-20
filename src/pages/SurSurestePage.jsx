@@ -11,7 +11,7 @@ export default function SursurestePage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const data = await api("/noticias/Sursureste");
+                const data = await api("/noticias/SurSureste");
                 setNoticias(data || []);
             } catch (error) {
                 console.error("Error obteniendo noticias sursureste:", error);
