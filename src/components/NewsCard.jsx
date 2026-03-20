@@ -5,7 +5,6 @@ export default function NewsCard({ noticia }) {
 
     const goToCategoryPage = () => {
         if (!noticia.category) return;
-
         const categoryRoute = {
             Informacion: "/info",
             Municipios: "/municipios",
@@ -18,35 +17,48 @@ export default function NewsCard({ noticia }) {
             Nacionales: "/nacionales",
             Cultura: "/cultura",
         }[noticia.category] || "/";
-
-        // 👉 Mandamos el ID de la noticia seleccionada
         navigate(categoryRoute + `?id=${noticia.id}`);
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        });
     };
 
     return (
         <div
             onClick={goToCategoryPage}
-            className="cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition p-4 border border-gray-200"
+            className="bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:border-gray-400 transition-colors duration-200 group"
         >
-            <div className="h-40 w-full overflow-hidden rounded-lg mb-3">
-                <img
-                    src={noticia.imageUrl || noticia.imageURL}
-                    alt={noticia.title}
-                    className="w-full h-full object-cover"
-                />
+            {/* Imagen */}
+            <div className="h-[110px] overflow-hidden bg-gray-100">
+                {noticia.image_url ? (
+                    <img
+                        src={noticia.image_url}
+                        alt={noticia.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                ) : (
+                    <div className="w-full h-full bg-gray-100" />
+                )}
             </div>
 
-            <span className="text-xs font-bold uppercase text-sky-600">
-                {noticia.category}
-            </span>
-
-            <h3 className="text-lg font-bold text-gray-900 mt-2 line-clamp-2">
-                {noticia.title}
-            </h3>
-
-            <p className="text-sm text-gray-700 mt-1 line-clamp-3">
-                {noticia.content}
-            </p>
+            {/* Texto */}
+            <div className="p-4">
+                <div className="w-5 h-[1.5px] bg-gray-300 mb-3" />
+                <p className="text-[10px] font-medium tracking-widest uppercase text-gray-400 mb-1.5">
+                    {noticia.category}
+                </p>
+                <h3 className="text-[13px] font-medium text-gray-900 leading-snug line-clamp-2 mb-3">
+                    {noticia.title}
+                </h3>
+                <p className="text-[11px] text-gray-400">
+                    {formatDate(noticia.created_at)}
+                </p>
+            </div>
         </div>
     );
 }

@@ -6,12 +6,10 @@ import { api } from "../services/api";
 function HomePage() {
     const [noticias, setNoticias] = useState([]);
     const [loading, setLoading] = useState(true);
-
     const navigate = useNavigate();
 
     const goToCategoryPage = (noticia) => {
         if (!noticia?.category) return;
-
         const categoryRoute = {
             Informacion: "/info",
             Municipios: "/municipios",
@@ -24,7 +22,6 @@ function HomePage() {
             Nacionales: "/nacionales",
             Cultura: "/cultura",
         }[noticia.category] || "/";
-
         navigate(categoryRoute, { state: { noticiaId: noticia.id } });
     };
 
@@ -39,92 +36,116 @@ function HomePage() {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        });
+    };
+
+    const readTime = (content) => {
+        const words = content?.split(" ").length || 0;
+        return `${Math.max(1, Math.ceil(words / 200))} min lectura`;
+    };
+
     return (
         <MainLayout>
-            <div className="w-full max-w-[1500px] mx-auto px-6 py-2">
+            <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
 
                 {loading && (
-                    <div className="text-center p-20 text-lg font-semibold animate-pulse">
-                        Cargando noticias...
+                    <div className="text-center py-24">
+                        <div className="inline-block w-6 h-6 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
                     </div>
                 )}
 
-                <h1 className="text-4xl font-black text-gray-900 mb-14 tracking-tight">
-                    Noticias Recientes
-                </h1>
+                {!loading && noticias.length > 0 && (
+                    <>
+                        {/* SECCIÓN LABEL */}
+                        <p className="text-[11px] font-medium tracking-widest uppercase text-gray-400 mb-4">
+                            Noticias recientes
+                        </p>
 
-                {/* NOTICIA PRINCIPAL */}
-                {noticias[0] && (
-                    <div
-                        onClick={() => goToCategoryPage(noticias[0])}
-                        className="relative mb-20 cursor-pointer rounded-3xl overflow-hidden shadow-2xl group h-[380px] sm:h-[460px] md:h-[500px]"
-                    >
-                        <img
-                            src={noticias[0].image_url}
-                            alt={noticias[0].title}
-                            className="w-full h-full object-cover brightness-75 group-hover:brightness-90 transition duration-300"
-                        />
+                        {/* HERO — NOTICIA PRINCIPAL */}
+                        {noticias[0] && (
+                            <div
+                                onClick={() => goToCategoryPage(noticias[0])}
+                                className="relative w-full h-[260px] sm:h-[360px] md:h-[440px] rounded-xl overflow-hidden cursor-pointer mb-8 group"
+                            >
+                                {noticias[0].image_url ? (
+                                    <img
+                                        src={noticias[0].image_url}
+                                        alt={noticias[0].title}
+                                        className="w-full h-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                                        style={{ filter: "brightness(0.5)" }}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-950" />
+                                )}
 
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 to-transparent p-6 sm:p-10 flex flex-col justify-end">
-                            <span className="text-[10px] sm:text-xs tracking-widest uppercase font-bold px-3 py-1 bg-white/20 rounded-md w-fit backdrop-blur-sm">
-                                {noticias[0].category}
-                            </span>
-
-                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mt-3 leading-tight drop-shadow-lg">
-                                {noticias[0].title}
-                            </h2>
-
-                            <p className="text-gray-200 text-sm sm:text-base mt-3 opacity-90 max-w-3xl line-clamp-3">
-                                {noticias[0].content}
-                            </p>
-
-                            <span className="text-white text-sm sm:text-base mt-4 underline opacity-80 group-hover:opacity-100">
-                                Leer noticia →
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                {/* GRID DE TARJETAS */}
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
-                    {noticias.slice(1).map((noticia) => (
-                        <div
-                            key={noticia.id}
-                            onClick={() => goToCategoryPage(noticia)}
-                            className="cursor-pointer transform transition duration-300 hover:-translate-y-2 hover:shadow-2xl bg-white rounded-2xl overflow-hidden border border-gray-200"
-                        >
-                            <div className="h-44 overflow-hidden">
-                                <img
-                                    src={noticia.image_url}
-                                    alt={noticia.title}
-                                    className="w-full h-full object-cover hover:scale-110 transition duration-500"
-                                />
-                            </div>
-
-                            <div className="p-5">
-                                <span className="text-xs font-bold text-sky-700 uppercase tracking-widest">
-                                    {noticia.category}
-                                </span>
-
-                                <h3 className="font-black text-lg mt-2 line-clamp-2">
-                                    {noticia.title}
-                                </h3>
-
-                                <p className="text-gray-600 text-sm mt-2 line-clamp-3">
-                                    {noticia.content}
-                                </p>
-
-                                <div className="mt-4 text-sky-600 font-semibold text-sm">
-                                    Leer más →
+                                <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10">
+                                    <span className="inline-block text-[10px] font-medium tracking-widest uppercase text-white border border-white/30 bg-white/15 backdrop-blur-sm px-3 py-1 rounded w-fit mb-3">
+                                        {noticias[0].category}
+                                    </span>
+                                    <div className="w-8 h-[2px] bg-white opacity-60 mb-3" />
+                                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight mb-2 max-w-3xl">
+                                        {noticias[0].title}
+                                    </h2>
+                                    <p className="text-white/70 text-sm line-clamp-2 max-w-2xl">
+                                        {noticias[0].content}
+                                    </p>
                                 </div>
                             </div>
+                        )}
+
+                        {/* GRID DE CARDS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {noticias.slice(1).map((noticia) => (
+                                <div
+                                    key={noticia.id}
+                                    onClick={() => goToCategoryPage(noticia)}
+                                    className="bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:border-gray-400 transition-colors duration-200 group"
+                                >
+                                    {/* Imagen */}
+                                    <div className="h-[110px] overflow-hidden bg-gray-100">
+                                        {noticia.image_url ? (
+                                            <img
+                                                src={noticia.image_url}
+                                                alt={noticia.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-gray-100" />
+                                        )}
+                                    </div>
+
+                                    {/* Texto */}
+                                    <div className="p-4">
+                                        <div className="w-5 h-[1.5px] bg-gray-300 mb-3" />
+                                        <p className="text-[10px] font-medium tracking-widest uppercase text-gray-400 mb-1.5">
+                                            {noticia.category}
+                                        </p>
+                                        <h3 className="text-[13px] font-medium text-gray-900 leading-snug line-clamp-2 mb-3">
+                                            {noticia.title}
+                                        </h3>
+                                        <p className="text-[11px] text-gray-400">
+                                            {formatDate(noticia.created_at)}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
+                    </>
+                )}
+
+                {!loading && noticias.length === 0 && (
+                    <div className="text-center py-24 text-gray-400 text-sm">
+                        No hay noticias publicadas aún.
+                    </div>
+                )}
             </div>
         </MainLayout>
     );
