@@ -11,16 +11,14 @@ export default function InfoPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Informacion");
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Informacion");
+                setNoticias(data || []);
             } catch (error) {
                 console.error("Error obteniendo noticias Informacion:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

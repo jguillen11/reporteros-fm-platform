@@ -11,16 +11,14 @@ export default function MunicipiosPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Municipios");
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Municipios");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias Municipios:", error);
+                console.error("Error obteniendo noticias municipios:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

@@ -10,21 +10,14 @@ export default function DeportesPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Deportes");
-
-                if (!res.ok) {
-                    throw new Error("Error en la respuesta del servidor");
-                }
-
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Deportes");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias Deporte:", error);
+                console.error("Error obteniendo noticias deportes:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

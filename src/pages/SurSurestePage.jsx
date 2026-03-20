@@ -11,16 +11,14 @@ export default function SursurestePage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Sursureste");
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Sursureste");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias SurSureste:", error);
+                console.error("Error obteniendo noticias sursureste:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

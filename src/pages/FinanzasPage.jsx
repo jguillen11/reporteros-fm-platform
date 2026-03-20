@@ -11,16 +11,14 @@ export default function FinanzasPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Finanzas");
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Finanzas");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias Finanzas:", error);
+                console.error("Error obteniendo noticias finanzas:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

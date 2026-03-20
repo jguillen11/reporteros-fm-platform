@@ -10,20 +10,14 @@ export default function CulturaPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Cultura");
-                if (!res.ok) {
-                    throw new Error("Error en la respuesta del servidor");
-                }
-
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Cultura");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias Cultura:", error);
+                console.error("Error obteniendo noticias cultura:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

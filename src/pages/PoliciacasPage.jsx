@@ -11,16 +11,14 @@ export default function PoliciacasPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Policiacas");
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Policiacas");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias Policiacas:", error);
+                console.error("Error obteniendo noticias policiacas:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

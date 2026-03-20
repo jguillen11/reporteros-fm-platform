@@ -11,16 +11,14 @@ export default function NacionalesPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Nacionales");
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Nacionales");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias Nacionales:", error);
+                console.error("Error obteniendo noticias nacionales:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

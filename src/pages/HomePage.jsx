@@ -31,14 +31,8 @@ function HomePage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias");
-
-                if (!res.ok) {
-                    throw new Error("Error al obtener noticias");
-                }
-
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias");
+                setNoticias(data || []);
             } catch (error) {
                 console.error("Error al cargar noticias:", error);
             } finally {

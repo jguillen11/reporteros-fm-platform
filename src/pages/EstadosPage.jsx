@@ -11,16 +11,14 @@ export default function EstadosPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Estados");
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Estados");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias Estados:", error);
+                console.error("Error obteniendo noticias estados:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 

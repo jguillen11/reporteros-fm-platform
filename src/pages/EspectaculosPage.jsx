@@ -10,21 +10,14 @@ export default function EspectaculosPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const res = await api("/api/noticias/Espectaculos");
-
-                if (!res.ok) {
-                    throw new Error("Error en la respuesta del servidor");
-                }
-
-                const data = await res.json();
-                setNoticias(data);
+                const data = await api("/noticias/Espectaculos");
+                setNoticias(data || []);
             } catch (error) {
-                console.error("Error obteniendo noticias Espectaculos:", error);
+                console.error("Error obteniendo noticias espectaculos:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchNoticias();
     }, []);
 
