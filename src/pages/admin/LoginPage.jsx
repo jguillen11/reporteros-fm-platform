@@ -36,7 +36,7 @@ function LoginPage() {
 
         try {
             // Petición a la API de Vercel (carpeta /api/admin/login.js)
-            const data = await api("/api/admin/login", {
+            const data = await api("/admin/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
