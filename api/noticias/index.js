@@ -53,13 +53,13 @@ export default async function handler(req, res) {
     // ─── POST ───────────────────────────────────────────
     if (req.method === "POST") {
         try {
-            const { title, category, content, image_url } = req.body;
+            const { title, category, content, image_url, images } = req.body;
             if (!title || !content)
                 return res.status(400).json({ error: "Título y contenido requeridos" });
 
             const { rows } = await pool.query(
-                "INSERT INTO noticias (title, category, content, image_url) VALUES ($1, $2, $3, $4) RETURNING *",
-                [title, category, content, image_url || null]
+                "INSERT INTO noticias (title, category, content, image_url, images) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+                [title, category, content, image_url || null, images || []]
             );
             return res.status(201).json(rows[0]);
 
@@ -75,13 +75,13 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: "Se requiere ID numérico" });
 
         try {
-            const { title, category, content, image_url } = req.body || {};
+            const { title, category, content, image_url, images } = req.body || {};
             if (!title)
                 return res.status(400).json({ error: "Faltan datos obligatorios" });
 
             const { rows } = await pool.query(
-                `UPDATE noticias SET title=$1, category=$2, content=$3, image_url=$4, updated_at=NOW() WHERE id=$5 RETURNING *`,
-                [title, category, content, image_url, id]
+                `UPDATE noticias SET title=$1, category=$2, content=$3, image_url=$4, images=$5, updated_at=NOW() WHERE id=$6 RETURNING *`,
+                [title, category, content, image_url, images || [], id]
             );
             if (rows.length === 0)
                 return res.status(404).json({ error: "No se pudo actualizar" });
