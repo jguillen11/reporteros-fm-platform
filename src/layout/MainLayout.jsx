@@ -18,6 +18,7 @@ function MainLayout({ children }) {
                 images={[
                     "/media/zapateria.jpeg",
                     "/media/piloto.jpeg",
+                    "/media/obras.jpeg",
                     "/media/torres.jpeg"
 
                 ]}
