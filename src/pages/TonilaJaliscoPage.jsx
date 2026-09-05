@@ -11,7 +11,7 @@ export default function TonilaJaliscoPage() {
     useEffect(() => {
         const fetchNoticias = async () => {
             try {
-                const data = await api("/noticias/TonilaJalisco");
+                const data = await api("/noticias/Tonila");
                 setNoticias(data || []);
             } catch (error) {
                 console.error("Error obteniendo noticias TonilaJalisco:", error);
