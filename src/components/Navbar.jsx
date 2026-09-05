@@ -35,6 +35,7 @@ function Navbar() {
         { path: "/sur-sureste", label: "Sur-Sureste de Jalisco" },
         { path: "/nacionales", label: "Nacionales" },
         { path: "/cultura", label: "Cultura" },
+        { path: "/tonila", label: "Tonila" },
     ];
 
     // Desktop: Enlaces Primarios (Primeros 5)
@@ -111,7 +112,7 @@ function Navbar() {
                             <button
                                 onClick={handleLogout}
                                 className="
-                                    text-gray-600 border border-red-600/50 px-3 py-1.5 rounded-full text-sm font-medium 
+                                    text-gray-600 border border-red-600/50 px-3 py-1.5 rounded-full text-sm font-medium 
                                     hover:text-red-700 hover:border-red-700 hover:bg-red-50 transition-colors flex items-center
                                 "
                                 title="Cerrar la sesión de administrador"

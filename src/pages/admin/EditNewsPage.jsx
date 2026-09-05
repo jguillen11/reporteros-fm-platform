@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 const CATEGORIES = [
     "Informacion", "Municipios", "Estados", "Policiacas",
     "Espectaculos", "Deportes", "Finanzas", "SurSureste",
-    "Nacionales", "Cultura",
+    "Nacionales", "Cultura", "Tonila",
 ];
 
 const MAX_IMAGES = 5;

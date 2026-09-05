@@ -16,6 +16,7 @@ export default function NewsCard({ noticia }) {
             SurSureste: "/sur-sureste",
             Nacionales: "/nacionales",
             Cultura: "/cultura",
+            Tonila: "/tonila",
         }[noticia.category] || "/";
         navigate(categoryRoute + `?id=${noticia.id}`);
     };

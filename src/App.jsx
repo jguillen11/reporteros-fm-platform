@@ -11,6 +11,7 @@ import FinanzasPage from "./pages/FinanzasPage";
 import SurSurestePage from "./pages/SurSurestePage";
 import NacionalesPage from "./pages/NacionalesPage";
 import CulturaPage from "./pages/CulturaPage";
+import TonilaJaliscoPage from "./pages/TonilaJaliscoPage";
 
 // Rutas de Administración
 import LoginPage from "./pages/admin/LoginPage";
@@ -37,6 +38,7 @@ function App() {
             <Route path="/sur-sureste" element={<SurSurestePage />} />
             <Route path="/nacionales" element={<NacionalesPage />} />
             <Route path="/cultura" element={<CulturaPage />} />
+            <Route path="/tonila" element={<TonilaJaliscoPage />} />
 
             {/* LOGIN */}
             <Route path="/admin/login" element={<LoginPage />} />
