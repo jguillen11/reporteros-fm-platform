@@ -1,5 +1,3 @@
-// api/noticias/index.js - REEMPLAZA TODO EL CONTENIDO CON ESTO
-
 import { Pool } from "pg";
 
 let pool;

@@ -19,7 +19,8 @@ function MainLayout({ children }) {
                     "/media/zapateria.jpeg",
                     "/media/piloto.jpeg",
                     "/media/obras.jpeg",
-                    "/media/torres.jpeg"
+                    "/media/torres.jpeg",
+                    "/media/informe.jpeg"
 
                 ]}
             />
