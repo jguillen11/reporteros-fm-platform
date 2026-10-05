@@ -38,7 +38,7 @@ function App() {
             <Route path="/sur-sureste" element={<SurSurestePage />} />
             <Route path="/nacionales" element={<NacionalesPage />} />
             <Route path="/cultura" element={<CulturaPage />} />
-            <Route path="/tonila" element={<TonilaJaliscoPagegit />} />
+            <Route path="/tonila" element={<TonilaJaliscoPage />} />
 
             {/* LOGIN */}
             <Route path="/admin/login" element={<LoginPage />} />
