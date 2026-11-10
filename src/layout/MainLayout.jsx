@@ -20,7 +20,7 @@ function MainLayout({ children }) {
                     "/media/piloto.jpeg",
                     "/media/obras.jpeg",
                     "/media/torres.jpeg",
-                    "/media/informe.jpeg"
+                    "/media/carnes_asadas.jpeg"
 
                 ]}
             />
